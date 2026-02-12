@@ -1,4 +1,4 @@
-use spl_shared::error::{AppError, Result};
+use spl_shared::error::Result;
 use spl_shared::http::extractor::ValidatedJson;
 
 use crate::adapters::web::{
@@ -26,7 +26,7 @@ use crate::adapters::web::middleware::permissions::{
 };
 use axum::routing::{post, put};
 use serde::{Deserialize, Serialize};
-use spl_shared::http::responses::{conditional_iter_json, conditional_json, StatusResponse};
+use spl_shared::http::responses::{ok_if_or_not_found, ok_iter_if_or_not_found, StatusResponse};
 use std::sync::Arc;
 use utoipa::{OpenApi, ToSchema};
 
@@ -99,17 +99,13 @@ async fn get_all_labels(
 ) -> Result<impl IntoResponse> {
     let labels = state.label_service.get_all().await?;
 
-    if labels.is_empty() {
-        Err(AppError::NoContent("No labels found".to_string()))
-    } else {
-        Ok((
-            StatusCode::OK,
-            conditional_iter_json::<_, SimplifiedLabelResponse, LabelResponse>(
-                labels,
-                query.simplified,
-            ),
-        ))
-    }
+    ok_iter_if_or_not_found(
+        labels,
+        query.simplified,
+        SimplifiedLabelResponse::from,
+        LabelResponse::from,
+        || "No labels found".to_string(),
+    )
 }
 
 #[utoipa::path(
@@ -136,20 +132,13 @@ async fn get_label(
 ) -> Result<impl IntoResponse> {
     let result = state.label_service.get_by_id(id).await?;
 
-    if result.is_none() {
-        Err(AppError::NotFound(format!(
-            "Label with id {} not found",
-            id
-        )))
-    } else {
-        Ok((
-            StatusCode::OK,
-            conditional_json::<_, SimplifiedLabelResponse, LabelResponse>(
-                result.unwrap(),
-                query.simplified,
-            ),
-        ))
-    }
+    ok_if_or_not_found(
+        result,
+        query.simplified,
+        SimplifiedLabelResponse::from,
+        LabelResponse::from,
+        move || format!("Label with id {} not found", id),
+    )
 }
 
 #[utoipa::path(

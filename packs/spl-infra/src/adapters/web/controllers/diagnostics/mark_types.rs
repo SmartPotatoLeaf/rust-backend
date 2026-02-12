@@ -1,4 +1,4 @@
-use spl_shared::error::{AppError, Result};
+use spl_shared::error::Result;
 use spl_shared::http::extractor::ValidatedJson;
 
 use crate::adapters::web::{
@@ -25,7 +25,7 @@ use axum::{
     Extension, Json, Router,
 };
 
-use spl_shared::http::responses::{conditional_iter_json, conditional_json, StatusResponse};
+use spl_shared::http::responses::{ok_if_or_not_found, ok_iter_if_or_not_found, StatusResponse};
 use std::sync::Arc;
 use axum::routing::{post, put};
 use utoipa::{OpenApi, ToSchema};
@@ -107,19 +107,13 @@ async fn get_all_mark_types(
 ) -> Result<impl IntoResponse> {
     let mark_types = state.mark_type_service.get_all(&user).await?;
 
-    if mark_types.is_empty() {
-        Err(AppError::NoContent(
-            "There are no mark types available".to_string(),
-        ))
-    } else {
-        Ok((
-            StatusCode::OK,
-            conditional_iter_json::<_, SimplifiedMarkTypeResponse, MarkTypeResponse>(
-                mark_types,
-                query.simplified,
-            ),
-        ))
-    }
+    ok_iter_if_or_not_found(
+        mark_types,
+        query.simplified,
+        SimplifiedMarkTypeResponse::from,
+        MarkTypeResponse::from,
+        || "There are no mark types available".to_string(),
+    )
 }
 
 #[utoipa::path(
@@ -147,19 +141,13 @@ async fn get_mark_type(
 ) -> Result<impl IntoResponse> {
     let result = state.mark_type_service.get_by_id(&user, id).await?;
 
-    if result.is_none() {
-        Err(AppError::NotFound(
-            "The mark type with the specified ID does not exist".to_string(),
-        ))
-    } else {
-        Ok((
-            StatusCode::OK,
-            conditional_json::<_, SimplifiedMarkTypeResponse, MarkTypeResponse>(
-                result.unwrap(),
-                query.simplified,
-            ),
-        ))
-    }
+    ok_if_or_not_found(
+        result,
+        query.simplified,
+        SimplifiedMarkTypeResponse::from,
+        MarkTypeResponse::from,
+        move || format!("The mark type with id {} does not exist", id),
+    )
 }
 
 #[utoipa::path(

@@ -24,7 +24,7 @@ use serde::{Deserialize, Serialize};
 use spl_shared::error::AppError;
 use spl_shared::error::Result;
 use spl_shared::http::extractor::ValidatedJson;
-use spl_shared::http::responses::{conditional_iter_json, ok_or_not_found, StatusResponse};
+use spl_shared::http::responses::{ok_if_or_not_found, ok_iter_if_or_not_found, StatusResponse};
 use spl_shared::traits::IntoWithContext;
 use std::sync::Arc;
 use utoipa::{OpenApi, ToSchema};
@@ -147,19 +147,13 @@ async fn get_all_by_user_id(
 ) -> Result<impl IntoResponse> {
     let predictions = state.prediction_service.get_by_user_id(user.id).await?;
 
-    if predictions.is_empty() {
-        Err(AppError::NoContent(
-            "No predictions found for this user".to_string(),
-        ))
-    } else {
-        Ok((
-            StatusCode::OK,
-            conditional_iter_json::<_, SimplifiedPredictionResponse, PredictionResponse>(
-                predictions,
-                query.simplified,
-            ),
-        ))
-    }
+    ok_iter_if_or_not_found(
+        predictions,
+        query.simplified,
+        SimplifiedPredictionResponse::from,
+        PredictionResponse::from,
+        || "No predictions found for this user".to_string(),
+    )
 }
 
 #[utoipa::path(
@@ -189,15 +183,13 @@ async fn get_by_id(
         .get_by_user_id_and_id(user.id, id)
         .await?;
 
-    let response = result.map(|p| {
-        if query.simplified {
-            PredictionOrSimplifiedResponse::Simplified(p.into())
-        } else {
-            PredictionOrSimplifiedResponse::Prediction(p.into())
-        }
-    });
-
-    ok_or_not_found(response, format!("Prediction {} not found", id))
+    ok_if_or_not_found(
+        result,
+        query.simplified,
+        SimplifiedPredictionResponse::from,
+        PredictionResponse::from,
+        || "Prediction not found".to_string(),
+    )
 }
 
 #[utoipa::path(
