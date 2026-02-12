@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use mockall::mock;
 use mockall::predicate::*;
+use spl_application::dtos::user::LoginDto;
 use spl_application::services::auth::AuthService;
 use spl_domain::entities::user::{Role, User};
 use spl_domain::ports::auth::{PasswordEncoder, TokenGenerator};
@@ -26,6 +27,7 @@ mock! {
     impl UserRepository for UserRepository {
         async fn get_by_ids(&self, ids: Vec<Uuid>) -> Result<Vec<User>>;
         async fn get_by_username_and_company(&self, username: &str, company_id: Option<Uuid>) -> Result<Option<User>>;
+        async fn get_by_username_or_email_and_company(&self, username: Option<String>, email: Option<String>, company_id: Option<Uuid>) -> Result<Option<User>>;
         async fn get_by_company_id(&self, company_id: Uuid) -> Result<Vec<User>> ;
     }
 }
@@ -96,10 +98,10 @@ async fn test_login_success() {
     };
 
     mock_repo
-        .expect_get_by_username_and_company()
-        .with(eq("testuser"), eq(None))
+        .expect_get_by_username_or_email_and_company()
+        .with(eq(Some("testuser".to_string())), eq(None), eq(None))
         .times(1)
-        .returning(move |_, _| Ok(Some(user.clone())));
+        .returning(move |_, _, _| Ok(Some(user.clone())));
 
     mock_encoder
         .expect_verify()
@@ -122,7 +124,14 @@ async fn test_login_success() {
         Arc::new(mock_token),
     );
 
-    let result = service.login("testuser", "secret", None).await;
+    let login_dto = LoginDto {
+        username: Some("testuser".to_string()),
+        email: None,
+        password: "secret".to_string(),
+        company_id: None,
+    };
+
+    let result = service.login(login_dto).await;
     assert!(result.is_ok());
     assert_eq!(result.unwrap(), "jwt_token");
 }
