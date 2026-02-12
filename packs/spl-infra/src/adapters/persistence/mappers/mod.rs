@@ -1,5 +1,6 @@
 pub mod company;
 pub mod diagnostics;
+pub mod feedback;
 pub mod image;
 pub mod plot;
 pub mod recommendation;
