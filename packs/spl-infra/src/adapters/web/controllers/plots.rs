@@ -17,10 +17,10 @@ use axum::http::StatusCode;
 use axum::routing::{get, post, put};
 use axum::{middleware, response::IntoResponse, Extension, Json, Router};
 use serde::{Deserialize, Serialize};
-use spl_shared::error::{AppError, Result};
+use spl_shared::error::Result;
 use spl_shared::http::extractor::ValidatedJson;
 use spl_shared::http::responses::{
-    conditional_iter_json, conditional_json, ok_or_not_found, StatusResponse,
+    ok_if_or_not_found, ok_iter_if_or_not_found, ok_or_not_found, StatusResponse,
 };
 use spl_shared::traits::IntoWithContext;
 use std::sync::Arc;
@@ -129,19 +129,13 @@ async fn get_plots(
 ) -> Result<impl IntoResponse> {
     let plots = state.plot_service.get_all_by_user(&user, None).await?;
 
-    if plots.is_empty() {
-        Err(AppError::NoContent(
-            "There are no plots available".to_string(),
-        ))
-    } else {
-        Ok((
-            StatusCode::OK,
-            conditional_iter_json::<_, SimplifiedPlotResponse, PlotResponse>(
-                plots,
-                query.simplified,
-            ),
-        ))
-    }
+    ok_iter_if_or_not_found(
+        plots,
+        query.simplified,
+        SimplifiedPlotResponse::from,
+        PlotResponse::from,
+        || "There are no plots available".to_string(),
+    )
 }
 
 /// Get a single plot by ID
@@ -169,19 +163,13 @@ async fn get_plot(
 ) -> Result<impl IntoResponse> {
     let result = state.plot_service.get_by_id(&user, id, None).await?;
 
-    if result.is_none() {
-        Err(AppError::NotFound(
-            "The plot with the specified ID does not exist".to_string(),
-        ))
-    } else {
-        Ok((
-            StatusCode::OK,
-            conditional_json::<_, SimplifiedPlotResponse, PlotResponse>(
-                result.unwrap(),
-                query.simplified,
-            ),
-        ))
-    }
+    ok_if_or_not_found(
+        result,
+        query.simplified,
+        SimplifiedPlotResponse::from,
+        PlotResponse::from,
+        move || format!("The plot with id {} does not exist", id),
+    )
 }
 
 /// Create a new plot
