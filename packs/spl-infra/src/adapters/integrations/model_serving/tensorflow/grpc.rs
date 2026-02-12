@@ -67,7 +67,7 @@ impl TensorFlowServingGrpcClient {
     fn create_spec(&self) -> ModelSpec {
         let mut model_spec = ModelSpec::default();
         model_spec.name = self.model_name.clone();
-        // model_spec.signature_name = "serving_default".to_string();
+        model_spec.signature_name = "serving_default".to_string();
         if let Some(version) = self.model_version {
             model_spec.version_choice = Some(VersionChoice::Version(version));
         }
@@ -116,7 +116,7 @@ impl TensorFlowServingGrpcClient {
         };
 
         let mut inputs = HashMap::new();
-        inputs.insert("input_1".to_string(), tensor_proto);
+        inputs.insert("input_layer".to_string(), tensor_proto);
 
         Ok(PredictRequest {
             model_spec: Some(model_spec),
