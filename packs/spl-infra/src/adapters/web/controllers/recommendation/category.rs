@@ -21,9 +21,9 @@ use axum::{
     Extension, Json, Router,
 };
 use serde::{Deserialize, Serialize};
-use spl_shared::error::{AppError, Result};
+use spl_shared::error::Result;
 use spl_shared::http::extractor::ValidatedJson;
-use spl_shared::http::responses::{conditional_iter_json, conditional_json, StatusResponse};
+use spl_shared::http::responses::{ok_if_or_not_found, ok_iter_if_or_not_found, StatusResponse};
 use std::sync::Arc;
 use utoipa::{OpenApi, ToSchema};
 
@@ -97,20 +97,13 @@ async fn get_all(
 ) -> Result<impl IntoResponse> {
     let types = state.recommendation_category_service.get_all().await?;
 
-    if types.is_empty() {
-        Err(AppError::NoContent(
-            "There are no recommendation categories available".to_string(),
-        ))
-    } else {
-        Ok((
-            StatusCode::OK,
-            conditional_iter_json::<
-                _,
-                SimplifiedRecommendationCategoryResponse,
-                RecommendationCategoryResponse,
-            >(types, query.simplified),
-        ))
-    }
+    ok_iter_if_or_not_found(
+        types,
+        query.simplified,
+        SimplifiedRecommendationCategoryResponse::from,
+        RecommendationCategoryResponse::from,
+        || "There are no recommendation categories available".to_string(),
+    )
 }
 
 #[utoipa::path(
@@ -137,20 +130,13 @@ async fn get_by_id(
 ) -> Result<impl IntoResponse> {
     let result = state.recommendation_category_service.get_by_id(id).await?;
 
-    if result.is_none() {
-        Err(AppError::NotFound(
-            "The recommendation category with the specified ID does not exist".to_string(),
-        ))
-    } else {
-        Ok((
-            StatusCode::OK,
-            conditional_json::<
-                _,
-                SimplifiedRecommendationCategoryResponse,
-                RecommendationCategoryResponse,
-            >(result.unwrap(), query.simplified),
-        ))
-    }
+    ok_if_or_not_found(
+        result,
+        query.simplified,
+        SimplifiedRecommendationCategoryResponse::from,
+        RecommendationCategoryResponse::from,
+        move || format!("The recommendation category with id {} does not exist", id),
+    )
 }
 
 #[utoipa::path(

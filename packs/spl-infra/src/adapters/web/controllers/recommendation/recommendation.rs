@@ -22,9 +22,9 @@ use axum::{
     Extension, Json, Router,
 };
 use serde::{Deserialize, Serialize};
-use spl_shared::error::{AppError, Result};
+use spl_shared::error::Result;
 use spl_shared::http::extractor::ValidatedJson;
-use spl_shared::http::responses::{conditional_iter_json, conditional_json};
+use spl_shared::http::responses::{ok_if_or_not_found, ok_iter_if_or_not_found, StatusResponse};
 use std::sync::Arc;
 use utoipa::{OpenApi, ToSchema};
 use uuid::Uuid;
@@ -102,19 +102,13 @@ async fn get_all(
 ) -> Result<impl IntoResponse> {
     let recommendations = state.recommendation_service.get_all().await?;
 
-    if recommendations.is_empty() {
-        Err(AppError::NoContent(
-            "There are no recommendations available".to_string(),
-        ))
-    } else {
-        Ok((
-            StatusCode::OK,
-            conditional_iter_json::<_, SimplifiedRecommendationResponse, RecommendationResponse>(
-                recommendations,
-                query.simplified,
-            ),
-        ))
-    }
+    ok_iter_if_or_not_found(
+        recommendations,
+        query.simplified,
+        SimplifiedRecommendationResponse::from,
+        RecommendationResponse::from,
+        || "There are no recommendations available".to_string(),
+    )
 }
 
 #[utoipa::path(
@@ -141,19 +135,13 @@ async fn get_by_id(
 ) -> Result<impl IntoResponse> {
     let result = state.recommendation_service.get_by_id(id).await?;
 
-    if result.is_none() {
-        Err(AppError::NotFound(
-            "The recommendation with the specified ID does not exist".to_string(),
-        ))
-    } else {
-        Ok((
-            StatusCode::OK,
-            conditional_json::<_, SimplifiedRecommendationResponse, RecommendationResponse>(
-                result.unwrap(),
-                query.simplified,
-            ),
-        ))
-    }
+    ok_if_or_not_found(
+        result,
+        query.simplified,
+        SimplifiedRecommendationResponse::from,
+        RecommendationResponse::from,
+        move || format!("The recommendation with id {} does not exist", id),
+    )
 }
 
 #[utoipa::path(
@@ -183,13 +171,13 @@ async fn get_by_severity(
         .get_by_severity(percentage)
         .await?;
 
-    Ok((
-        StatusCode::OK,
-        conditional_iter_json::<_, SimplifiedRecommendationResponse, RecommendationResponse>(
-            recommendations,
-            query.simplified,
-        ),
-    ))
+    ok_iter_if_or_not_found(
+        recommendations,
+        query.simplified,
+        SimplifiedRecommendationResponse::from,
+        RecommendationResponse::from,
+        move || format!("No recommendations found for severity {}", percentage),
+    )
 }
 
 #[utoipa::path(
@@ -225,7 +213,7 @@ async fn create(
     ),
     request_body = UpdateRecommendationRequest,
     responses(
-        (status = 200, description = "Recommendation updated", body = RecommendationResponse),
+        (status = 200, description = "Recommendation updated", body = StatusResponse),
         (status = 401, description = "Unauthorized", body = StatusResponse),
         (status = 403, description = "Forbidden (Admin only)", body = StatusResponse),
         (status = 404, description = "Not found", body = StatusResponse),
@@ -240,12 +228,19 @@ async fn update(
     _user: AuthUser,
     ValidatedJson(payload): ValidatedJson<UpdateRecommendationRequest>,
 ) -> Result<impl IntoResponse> {
-    let result = state
+    let _ = state
         .recommendation_service
         .update(id, payload.into())
         .await?;
 
-    Ok((StatusCode::OK, Json(RecommendationResponse::from(result))))
+    Ok((
+        StatusCode::OK,
+        Json(StatusResponse {
+            success: true,
+            code: 200,
+            message: "Recommendation updated successfully".to_string(),
+        }),
+    ))
 }
 
 #[utoipa::path(
@@ -255,7 +250,7 @@ async fn update(
         ("id" = Uuid, Path, description = "Recommendation ID")
     ),
     responses(
-        (status = 200, description = "Recommendation deleted"),
+        (status = 200, description = "Recommendation deleted", body = StatusResponse),
         (status = 401, description = "Unauthorized", body = StatusResponse),
         (status = 403, description = "Forbidden (Admin only)", body = StatusResponse),
         (status = 404, description = "Not found", body = StatusResponse),
@@ -268,7 +263,14 @@ async fn delete_recommendation(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
 ) -> Result<impl IntoResponse> {
-    let result = state.recommendation_service.delete(id).await?;
+    let _ = state.recommendation_service.delete(id).await?;
 
-    Ok((StatusCode::OK, Json(RecommendationResponse::from(result))))
+    Ok((
+        StatusCode::OK,
+        Json(StatusResponse {
+            success: true,
+            code: 200,
+            message: "Recommendation deleted successfully".to_string(),
+        }),
+    ))
 }
