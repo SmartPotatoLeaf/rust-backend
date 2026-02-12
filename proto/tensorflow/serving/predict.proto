@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package tensorflow.serving;
+
+import "tensorflow/core/framework/tensor.proto";
+import "tensorflow/serving/model.proto";
+
+option cc_enable_arenas = true;
+option java_outer_classname = "PredictProtos";
+option java_multiple_files = true;
+option java_package = "org.tensorflow.serving";
+option go_package = "github.com/tensorflow/serving/tensorflow_serving/apis/predict_go_proto";
+
+message PredictRequest {
+  ModelSpec model_spec = 1;
+  map<string, tensorflow.TensorProto> inputs = 2;
+  repeated string output_filter = 3;
+}
+
+message PredictResponse {
+  ModelSpec model_spec = 2;
+  map<string, tensorflow.TensorProto> outputs = 1;
+}

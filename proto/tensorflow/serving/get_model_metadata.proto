@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package tensorflow.serving;
+
+import "tensorflow/serving/model.proto";
+import "google/protobuf/any.proto";
+
+option cc_enable_arenas = true;
+option java_outer_classname = "GetModelMetadataProtos";
+option java_multiple_files = true;
+option java_package = "org.tensorflow.serving";
+option go_package = "github.com/tensorflow/serving/tensorflow_serving/apis/get_model_metadata_go_proto";
+
+// Request for model metadata.
+message GetModelMetadataRequest {
+  // Model Specification. If version is not specified, will use the latest
+  // (numerical) version.
+  ModelSpec model_spec = 1;
+  
+  // Metadata fields to get. Currently supported: "signature_def".
+  repeated string metadata_field = 2;
+}
+
+// Response for model metadata.
+message GetModelMetadataResponse {
+  // Model Specification.
+  ModelSpec model_spec = 1;
+  
+  // Map of metadata field name to metadata field. The options for the
+  // metadata field name are:
+  //   "signature_def".
+  map<string, google.protobuf.Any> metadata = 2;
+}

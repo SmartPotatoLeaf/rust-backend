@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package tensorflow.serving;
+
+import "tensorflow/serving/predict.proto";
+import "tensorflow/serving/get_model_metadata.proto";
+
+option cc_enable_arenas = true;
+option java_outer_classname = "PredictionServiceProtos";
+option java_multiple_files = true;
+option java_package = "org.tensorflow.serving";
+option go_package = "github.com/tensorflow/serving/tensorflow_serving/apis/prediction_service_go_proto";
+
+service PredictionService {
+  // Predict -- provides access to loaded TensorFlow model.
+  rpc Predict(PredictRequest) returns (PredictResponse);
+  
+  // GetModelMetadata -- provides access to metadata for loaded models.
+  rpc GetModelMetadata(GetModelMetadataRequest) returns (GetModelMetadataResponse);
+}
