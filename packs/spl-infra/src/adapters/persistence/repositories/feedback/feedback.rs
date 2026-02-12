@@ -2,10 +2,10 @@ use crate::adapters::persistence::entities::diagnostics::{label, prediction};
 use crate::adapters::persistence::entities::feedback::{self, status};
 use crate::adapters::persistence::mappers::feedback::FeedbackMapperContext;
 use sea_orm::*;
-use spl_domain::entities::diagnostics::{Label, Prediction};
+use spl_domain::entities::diagnostics::Label;
 use spl_domain::entities::feedback::{Feedback, FeedbackStatus};
 use spl_domain::ports::repositories::crud::CrudRepository;
-use spl_domain::ports::repositories::diagnostics::{LabelRepository, PredictionRepository};
+use spl_domain::ports::repositories::diagnostics::LabelRepository;
 use spl_domain::ports::repositories::feedback::{FeedbackRepository, FeedbackStatusRepository};
 use spl_shared::adapters::persistence::repository::crud;
 use spl_shared::error::{AppError, Result};
@@ -17,7 +17,6 @@ pub struct DbFeedbackRepository {
     db: DatabaseConnection,
     status_repository: Arc<dyn FeedbackStatusRepository>,
     label_repository: Arc<dyn LabelRepository>,
-    prediction_repository: Arc<dyn PredictionRepository>,
 }
 
 impl DbFeedbackRepository {
@@ -25,13 +24,11 @@ impl DbFeedbackRepository {
         db: DatabaseConnection,
         status_repository: Arc<dyn FeedbackStatusRepository>,
         label_repository: Arc<dyn LabelRepository>,
-        prediction_repository: Arc<dyn PredictionRepository>,
     ) -> Self {
         Self {
             db,
             status_repository,
             label_repository,
-            prediction_repository,
         }
     }
 
@@ -40,9 +37,14 @@ impl DbFeedbackRepository {
         status_id: i32,
         label_id: Option<i32>,
         prediction_id: Uuid,
-    ) -> Result<(FeedbackStatus, Option<Label>, Prediction)> {
+    ) -> Result<(FeedbackStatus, Option<Label>)> {
         let status_future = self.status_repository.get_by_id(status_id);
-        let prediction_future = self.prediction_repository.get_by_id(prediction_id);
+        let prediction_future = async {
+            prediction::Entity::find_by_id(prediction_id)
+                .one(&self.db)
+                .await
+                .map_err(AppError::from)
+        };
 
         let label_future = if let Some(lid) = label_id {
             Some(self.label_repository.get_by_id(lid))
@@ -74,11 +76,11 @@ impl DbFeedbackRepository {
                 None
             };
 
-        let prediction = prediction_opt.ok_or_else(|| {
+        prediction_opt.ok_or_else(|| {
             AppError::NotFound(format!("Prediction with id {} not found", prediction_id))
         })?;
 
-        Ok((status, label, prediction))
+        Ok((status, label))
     }
 
     fn map_model(
@@ -153,7 +155,7 @@ impl CrudRepository<Feedback, Uuid> for DbFeedbackRepository {
 
     async fn create(&self, entity: Feedback) -> Result<Feedback> {
         self.with_map(|| async {
-            let (status, correct_label, _) = self
+            let (status, correct_label) = self
                 .find_relations(
                     entity.status.id,
                     entity.correct_label.as_ref().map(|l| l.id),
@@ -170,7 +172,7 @@ impl CrudRepository<Feedback, Uuid> for DbFeedbackRepository {
 
     async fn update(&self, entity: Feedback) -> Result<Feedback> {
         self.with_map(|| async {
-            let (status, correct_label, _) = self
+            let (status, correct_label) = self
                 .find_relations(
                     entity.status.id,
                     entity.correct_label.as_ref().map(|l| l.id),
@@ -240,6 +242,13 @@ impl FeedbackRepository for DbFeedbackRepository {
             .cloned();
 
         Ok(result)
+    }
+
+    async fn get_by_predictions_ids(&self, prediction_ids: Vec<Uuid>) -> Result<Vec<Feedback>> {
+        self.find(
+            feedback::Entity::find().filter(feedback::Column::PredictionId.is_in(prediction_ids)),
+        )
+        .await
     }
 
     async fn get_by_user_and_prediction_id(

@@ -332,7 +332,6 @@ async fn main() -> Result<()> {
         db.clone(),
         feedback_status_repo.clone(),
         label_repo.clone(),
-        prediction_repo
     ));
 
     let feedback_status_service =

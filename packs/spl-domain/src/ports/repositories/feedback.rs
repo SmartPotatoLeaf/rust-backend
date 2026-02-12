@@ -15,6 +15,7 @@ pub trait FeedbackRepository: CrudRepository<Feedback, Uuid> {
     async fn get_by_id_and_user_id(&self, id: Uuid, user_id: Uuid) -> Result<Option<Feedback>>;
     async fn delete_by_id_and_user_id(&self, id: Uuid, user_id: Uuid) -> Result<Feedback>;
     async fn get_by_prediction_id(&self, prediction_id: Uuid) -> Result<Option<Feedback>>;
+    async fn get_by_predictions_ids(&self, prediction_ids: Vec<Uuid>) -> Result<Vec<Feedback>>;
     async fn get_by_user_and_prediction_id(
         &self,
         user_id: Uuid,
