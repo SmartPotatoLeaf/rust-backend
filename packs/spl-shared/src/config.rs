@@ -49,7 +49,7 @@ pub struct IntegrationsConfig {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct ModelServingConfig {
-    /// Provider type: "tensorflow" or "mock"
+    /// Provider type: "tensorflow", "tensorflow_grpc", or "mock"
     pub provider: String,
     /// Base URL for the model serving endpoint
     pub url: String,

@@ -18,7 +18,10 @@ use spl_domain::ports::integrations::{BlobStorageClient, ModelPredictionClient};
 use spl_domain::ports::repositories::crud::CrudRepository;
 use spl_domain::ports::repositories::user::{RoleRepository, UserRepository};
 use spl_infra::adapters::integrations::{
-    model_serving::{mock::MockModelClient, tensorflow::TensorFlowServingClient},
+    model_serving::{
+        mock::MockModelClient,
+        tensorflow::{TensorFlowServingClient, TensorFlowServingGrpcClient},
+    },
     storage::{azure::AzureBlobClient, local::LocalFileSystemClient, mock::MockBlobClient},
 };
 use spl_infra::adapters::{
@@ -157,6 +160,23 @@ async fn main() -> Result<()> {
                         .unwrap_or(10),
                 ))
             }
+            "tensorflow_grpc" => {
+                info!("Using TensorFlow Serving with gRPC for model predictions");
+                Arc::new(
+                    TensorFlowServingGrpcClient::new(
+                        config.integrations.model_serving.url.clone(),
+                        config.integrations.model_serving.model_name.clone(),
+                        None, // model_version opcional
+                        config.integrations.model_serving.timeout_seconds,
+                        config.integrations.model_serving.image_size.unwrap_or(256),
+                        config
+                            .integrations
+                            .model_serving
+                            .concurrency_limit
+                            .unwrap_or(10),
+                    )?,
+                )
+            }
             "mock" => {
                 info!("Using Mock Model Client (development mode)");
                 Arc::new(MockModelClient::new())
@@ -164,7 +184,7 @@ async fn main() -> Result<()> {
             provider => {
                 error!("Invalid model serving provider: {}", provider);
                 anyhow::bail!(
-                    "Invalid model serving provider: {}. Use 'tensorflow' or 'mock'",
+                    "Invalid model serving provider: {}. Use 'tensorflow', 'tensorflow_grpc', or 'mock'",
                     provider
                 );
             }
