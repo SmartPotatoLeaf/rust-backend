@@ -1,0 +1,14 @@
+[package]
+name = "spl-domain"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+spl-shared.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+async-trait.workspace = true
+bytes = "1.5"
