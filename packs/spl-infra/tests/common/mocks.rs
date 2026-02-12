@@ -21,6 +21,7 @@ use spl_domain::{
 };
 use spl_shared::error::Result;
 use uuid::Uuid;
+use spl_domain::entities::feedback::Feedback;
 
 mock! {
     pub UserRepository {}
@@ -248,3 +249,39 @@ mock! {
         async fn get_by_predictions_ids(&self, prediction_id: Vec<Uuid>) -> Result<Vec<entities::diagnostics::PredictionMark>>;
     }
 }
+
+mock! {
+    pub FeedbackStatusRepository {}
+    #[async_trait]
+    impl CrudRepository<entities::feedback::FeedbackStatus, i32> for FeedbackStatusRepository {
+        async fn get_by_id(&self, id: i32) -> Result<Option<entities::feedback::FeedbackStatus>>;
+        async fn create(&self, entity: entities::feedback::FeedbackStatus) -> Result<entities::feedback::FeedbackStatus>;
+        async fn update(&self, entity: entities::feedback::FeedbackStatus) -> Result<entities::feedback::FeedbackStatus>;
+        async fn delete(&self, id: i32) -> Result<entities::feedback::FeedbackStatus>;
+    }
+    #[async_trait]
+    impl repositories::feedback::FeedbackStatusRepository for FeedbackStatusRepository {
+        async fn get_all(&self) -> Result<Vec<entities::feedback::FeedbackStatus>>;
+        async fn get_by_name(&self, name: &str) -> Result<Option<entities::feedback::FeedbackStatus>>;
+    }
+}
+
+mock! {
+    pub FeedbackRepository {}
+    #[async_trait]
+    impl CrudRepository<Feedback, Uuid> for FeedbackRepository {
+        async fn get_by_id(&self, id: Uuid) -> Result<Option<Feedback>>;
+        async fn create(&self, entity: Feedback) -> Result<Feedback>;
+        async fn update(&self, entity: Feedback) -> Result<Feedback>;
+        async fn delete(&self, id: Uuid) -> Result<Feedback>;
+    }
+    #[async_trait]
+    impl repositories::feedback::FeedbackRepository for FeedbackRepository {
+        async fn get_all_by_user_id(&self, user_id: Uuid) -> Result<Vec<Feedback>>;
+        async fn delete_by_id_and_user_id(&self, id: Uuid, user_id: Uuid) -> Result<Feedback>;
+        async fn get_by_id_and_user_id(&self, id: Uuid, user_id: Uuid) -> Result<Option<Feedback>>;
+        async fn get_by_prediction_id(&self, prediction_id: Uuid) -> Result<Option<Feedback>>;
+        async fn get_by_user_and_prediction_id(&self, user_id: Uuid, prediction_id: Uuid) -> Result<Option<Feedback>>;
+    }
+}
+

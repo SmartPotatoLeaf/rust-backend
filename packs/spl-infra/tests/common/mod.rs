@@ -4,6 +4,7 @@ use spl_application::services::{
     auth::AuthService,
     company::CompanyService,
     diagnostics::{LabelService, MarkTypeService, PredictionService},
+    feedback::{FeedbackService},
     plot::PlotService,
     recommendation,
     recommendation::RecommendationService,
@@ -19,6 +20,7 @@ use std::sync::Arc;
 
 pub mod mocks;
 pub use mocks::*;
+use spl_application::services::feedback::status::FeedbackStatusService;
 
 pub fn build_app(
     user_repo: MockUserRepository,
@@ -134,6 +136,19 @@ pub fn build_app_full(
         image_repo,
     ));
 
+    // Initialize feedback services
+    let feedback_status_repo = Arc::new(MockFeedbackStatusRepository::new());
+    let feedback_repo = Arc::new(MockFeedbackRepository::new());
+    
+    let feedback_status_service = Arc::new(FeedbackStatusService::new(
+        feedback_status_repo.clone(),
+    ));
+    let feedback_service = Arc::new(FeedbackService::new(
+        feedback_repo,
+        feedback_status_repo,
+        label_repo.clone(),
+    ));
+
     let config = Arc::new(AppConfig {
         server: spl_shared::config::ServerConfig {
             host: "127.0.0.1".into(),
@@ -188,6 +203,8 @@ pub fn build_app_full(
         mark_type_service,
         prediction_service,
         plot_service,
+        feedback_service,
+        feedback_status_service,
         roles,
         model_client,
         storage_client,

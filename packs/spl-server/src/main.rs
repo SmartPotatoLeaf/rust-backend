@@ -1,5 +1,6 @@
 use anyhow::Result;
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
+use spl_application::services::feedback::{FeedbackService};
 use spl_application::{
     services,
     services::{
@@ -34,6 +35,7 @@ use spl_infra::adapters::{
                 DbLabelRepository, DbMarkTypeRepository, DbPredictionMarkRepository,
                 DbPredictionRepository,
             },
+            feedback::{DbFeedbackRepository},
             image::DbImageRepository,
             plot::DbPlotRepository,
             recommendation::DbRecommendationRepository,
@@ -49,6 +51,8 @@ use std::sync::Arc;
 use std::time::Duration;
 use tracing::{error, info};
 use uuid::Uuid;
+use spl_application::services::feedback::status::FeedbackStatusService;
+use spl_infra::adapters::persistence::repositories::DbFeedbackStatusRepository;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -144,51 +148,53 @@ async fn main() -> Result<()> {
     info!("Initializing integration clients...");
 
     // 6.1 Initialize Model Prediction Client
-    let model_client: Arc<dyn ModelPredictionClient> =
-        match config.integrations.model_serving.provider.as_str() {
-            "tensorflow" => {
-                info!("Using TensorFlow Serving for model predictions");
-                Arc::new(TensorFlowServingClient::new(
-                    config.integrations.model_serving.url.clone(),
-                    config.integrations.model_serving.model_name.clone(),
-                    config.integrations.model_serving.timeout_seconds,
-                    config.integrations.model_serving.image_size.unwrap_or(256),
-                    config
-                        .integrations
-                        .model_serving
-                        .concurrency_limit
-                        .unwrap_or(10),
-                ))
-            }
-            "tensorflow_grpc" => {
-                info!("Using TensorFlow Serving with gRPC for model predictions");
-                Arc::new(
-                    TensorFlowServingGrpcClient::new(
-                        config.integrations.model_serving.url.clone(),
-                        config.integrations.model_serving.model_name.clone(),
-                        None, // model_version opcional
-                        config.integrations.model_serving.timeout_seconds,
-                        config.integrations.model_serving.image_size.unwrap_or(256),
-                        config
-                            .integrations
-                            .model_serving
-                            .concurrency_limit
-                            .unwrap_or(10),
-                    )?,
-                )
-            }
-            "mock" => {
-                info!("Using Mock Model Client (development mode)");
-                Arc::new(MockModelClient::new())
-            }
-            provider => {
-                error!("Invalid model serving provider: {}", provider);
-                anyhow::bail!(
+    let model_client: Arc<dyn ModelPredictionClient> = match config
+        .integrations
+        .model_serving
+        .provider
+        .as_str()
+    {
+        "tensorflow" => {
+            info!("Using TensorFlow Serving for model predictions");
+            Arc::new(TensorFlowServingClient::new(
+                config.integrations.model_serving.url.clone(),
+                config.integrations.model_serving.model_name.clone(),
+                config.integrations.model_serving.timeout_seconds,
+                config.integrations.model_serving.image_size.unwrap_or(256),
+                config
+                    .integrations
+                    .model_serving
+                    .concurrency_limit
+                    .unwrap_or(10),
+            ))
+        }
+        "tensorflow_grpc" => {
+            info!("Using TensorFlow Serving with gRPC for model predictions");
+            Arc::new(TensorFlowServingGrpcClient::new(
+                config.integrations.model_serving.url.clone(),
+                config.integrations.model_serving.model_name.clone(),
+                None, // model_version opcional
+                config.integrations.model_serving.timeout_seconds,
+                config.integrations.model_serving.image_size.unwrap_or(256),
+                config
+                    .integrations
+                    .model_serving
+                    .concurrency_limit
+                    .unwrap_or(10),
+            )?)
+        }
+        "mock" => {
+            info!("Using Mock Model Client (development mode)");
+            Arc::new(MockModelClient::new())
+        }
+        provider => {
+            error!("Invalid model serving provider: {}", provider);
+            anyhow::bail!(
                     "Invalid model serving provider: {}. Use 'tensorflow', 'tensorflow_grpc', or 'mock'",
                     provider
                 );
-            }
-        };
+        }
+    };
 
     // 6.2 Initialize Blob Storage Client
     let storage_client: Arc<dyn BlobStorageClient> =
@@ -320,7 +326,23 @@ async fn main() -> Result<()> {
         access_control_service,
     ));
 
-    // 7. Initialize Web Router
+    // 7.6 Initialize Feedback Services
+    let feedback_status_repo = Arc::new(DbFeedbackStatusRepository::new(db.clone()));
+    let feedback_repo = Arc::new(DbFeedbackRepository::new(
+        db.clone(),
+        feedback_status_repo.clone(),
+        label_repo.clone(),
+    ));
+
+    let feedback_status_service =
+        Arc::new(FeedbackStatusService::new(feedback_status_repo.clone()));
+    let feedback_service = Arc::new(FeedbackService::new(
+        feedback_repo,
+        feedback_status_repo.clone(),
+        label_repo.clone(),
+    ));
+
+    // 8. Initialize Web Router
     info!("Loading role cache...");
     let roles_list = role_repo.get_all().await?;
     let mut role_cache = std::collections::HashMap::new();
@@ -342,6 +364,8 @@ async fn main() -> Result<()> {
         mark_type_service,
         prediction_service,
         plot_service,
+        feedback_service,
+        feedback_status_service,
         role_cache,
         model_client,
         storage_client,
