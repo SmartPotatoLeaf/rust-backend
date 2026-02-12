@@ -1,4 +1,4 @@
-use spl_shared::error::{AppError, Result};
+use spl_shared::error::Result;
 use spl_shared::http::extractor::ValidatedJson;
 
 use crate::adapters::web::{
@@ -25,7 +25,7 @@ use axum::{
 };
 
 use serde::{Deserialize, Serialize};
-use spl_shared::http::responses::{conditional_json, StatusResponse};
+use spl_shared::http::responses::{ok_if_or_not_found, StatusResponse};
 use std::sync::Arc;
 use utoipa::{OpenApi, ToSchema};
 use uuid::Uuid;
@@ -41,10 +41,10 @@ enum CompanyOrSimplifiedResponse {
 #[openapi(
     paths(create_company, get_company, update_company, delete_company),
     components(schemas(
-        CreateCompanyRequest, 
-        CompanyResponse, 
-        UpdateCompanyRequest, 
-        SimplifiedCompanyResponse, 
+        CreateCompanyRequest,
+        CompanyResponse,
+        UpdateCompanyRequest,
+        SimplifiedCompanyResponse,
         CompanyOrSimplifiedResponse,
         StatusResponse
     )),
@@ -130,17 +130,13 @@ async fn get_company(
 ) -> Result<impl IntoResponse> {
     let result = state.company_service.get_by_id(&user, id).await?;
 
-    if result.is_none() {
-        Err(AppError::NotFound(format!("Company {} not found", id)))
-    } else {
-        Ok((
-            StatusCode::OK,
-            conditional_json::<_, SimplifiedCompanyResponse, CompanyResponse>(
-                result.unwrap(),
-                query.simplified,
-            ),
-        ))
-    }
+    ok_if_or_not_found(
+        result,
+        query.simplified,
+        SimplifiedCompanyResponse::from,
+        CompanyResponse::from,
+        move || format!("Company {} not found", id),
+    )
 }
 
 #[utoipa::path(
