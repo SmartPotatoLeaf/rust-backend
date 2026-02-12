@@ -7,7 +7,7 @@ use crate::entities::diagnostics::Label;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Feedback {
-    pub id: i32,
+    pub id: Uuid,
     pub comment: Option<String>,
     pub status: FeedbackStatus,
     pub correct_label: Option<Label>,
