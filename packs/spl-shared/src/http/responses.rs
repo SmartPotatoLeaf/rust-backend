@@ -24,6 +24,7 @@ impl IntoResponse for AppError {
             ),
             AppError::NotFound(message) => (StatusCode::NOT_FOUND, "NOT_FOUND", message),
             AppError::ValidationError(msg) => (StatusCode::BAD_REQUEST, "VALIDATION_ERROR", msg),
+            AppError::Conflict(msg) => (StatusCode::CONFLICT, "CONFLICT", msg),
             AppError::AuthError(message) => (StatusCode::UNAUTHORIZED, "AUTH_ERROR", message),
             AppError::InvalidCredentials => (
                 StatusCode::UNAUTHORIZED,
@@ -100,30 +101,41 @@ impl IntoResponse for AppError {
     }
 }
 
-pub fn conditional_json<T, R1, R2>(data: T, condition: bool) -> impl IntoResponse
+pub fn json_if<T, F1, F2, R1, R2>(
+    data: T,
+    condition: bool,
+    on_true: F1,
+    on_false: F2,
+) -> impl IntoResponse
 where
-    R1: From<T> + Serialize,
-    R2: From<T> + Serialize,
+    F1: FnOnce(T) -> R1,
+    F2: FnOnce(T) -> R2,
+    R1: Serialize,
+    R2: Serialize,
 {
     if condition {
-        Json(R1::from(data)).into_response()
+        Json(on_true(data)).into_response()
     } else {
-        Json(R2::from(data)).into_response()
+        Json(on_false(data)).into_response()
     }
 }
 
-pub fn conditional_iter_json<T, R1, R2>(
+pub fn iter_json_if<T, F1, F2, R1, R2>(
     data: impl IntoIterator<Item = T>,
     condition: bool,
+    on_true: F1,
+    on_false: F2,
 ) -> impl IntoResponse
 where
-    R1: From<T> + Serialize,
-    R2: From<T> + Serialize,
+    F1: FnMut(T) -> R1,
+    F2: FnMut(T) -> R2,
+    R1: Serialize,
+    R2: Serialize,
 {
     if condition {
-        Json(data.into_iter().map(R1::from).collect::<Vec<_>>()).into_response()
+        Json(data.into_iter().map(on_true).collect::<Vec<_>>()).into_response()
     } else {
-        Json(data.into_iter().map(R2::from).collect::<Vec<_>>()).into_response()
+        Json(data.into_iter().map(on_false).collect::<Vec<_>>()).into_response()
     }
 }
 
@@ -137,5 +149,46 @@ where
     match option {
         Some(data) => Ok((StatusCode::OK, Json(data))),
         None => Err(AppError::NotFound(not_found_msg)),
+    }
+}
+
+pub fn ok_if_or_not_found<T, F1, F2, F3, R1, R2>(
+    data: Option<T>,
+    condition: bool,
+    on_true: F1,
+    on_false: F2,
+    not_found: F3,
+) -> Result<impl IntoResponse, AppError>
+where
+    F1: FnOnce(T) -> R1,
+    F2: FnOnce(T) -> R2,
+    F3: FnOnce() -> String,
+    R1: Serialize,
+    R2: Serialize,
+{
+    match data {
+        Some(data) => Ok((StatusCode::OK, json_if(data, condition, on_true, on_false))),
+        None => Err(AppError::NotFound(not_found())),
+    }
+}
+
+pub fn ok_iter_if_or_not_found<T, F1, F2, F3, R1, R2>(
+    data: Vec<T>,
+    condition: bool,
+    on_true: F1,
+    on_false: F2,
+    no_content: F3,
+) -> Result<impl IntoResponse, AppError>
+where
+    F1: FnMut(T) -> R1,
+    F2: FnMut(T) -> R2,
+    F3: FnOnce() -> String,
+    R1: Serialize,
+    R2: Serialize,
+{
+    if data.is_empty() {
+        Err(AppError::NoContent(no_content()))
+    } else {
+        Ok((StatusCode::OK, iter_json_if(data, condition, on_true, on_false)))
     }
 }
