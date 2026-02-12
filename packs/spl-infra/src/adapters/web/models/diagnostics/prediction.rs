@@ -8,6 +8,7 @@ use spl_shared::validation::validate_range_min_max;
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::{Validate, ValidationError};
+use crate::adapters::web::models::feedback::{FeedbackResponse, SimplifiedFeedbackResponse};
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct PredictionResponse {
@@ -21,6 +22,7 @@ pub struct PredictionResponse {
     pub image: ImageResponse,
     pub label: LabelResponse,
     pub marks: Vec<PredictionMarkResponse>,
+    pub feedback: Option<FeedbackResponse>
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -28,10 +30,12 @@ pub struct SimplifiedPredictionResponse {
     pub id: Uuid,
     pub user_id: Uuid,
     pub presence_confidence: f32,
+    pub absence_confidence: f32,
     pub severity: f32,
     pub label: SimplifiedLabelResponse,
     pub image: ImageResponse,
     pub marks: Vec<PredictionMarkResponse>,
+    pub feedback: Option<SimplifiedFeedbackResponse>,
     pub created_at: DateTime<Utc>,
 }
 

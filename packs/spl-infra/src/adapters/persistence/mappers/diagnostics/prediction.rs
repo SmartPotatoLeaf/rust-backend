@@ -1,6 +1,7 @@
 use crate::adapters::persistence::entities::diagnostics::prediction::{ActiveModel, Model};
 use sea_orm::Set;
 use spl_domain::entities::diagnostics::{Label, Prediction, PredictionMark};
+use spl_domain::entities::feedback::Feedback;
 use spl_domain::entities::image::Image;
 use spl_domain::entities::user::User;
 use spl_shared::error::AppError;
@@ -12,6 +13,7 @@ pub struct PredictionMapperContext {
     pub image: Image,
     pub label: Label,
     pub marks: Vec<PredictionMark>,
+    pub feedback: Option<Feedback>
 }
 
 impl IntoWithContext<Prediction, PredictionMapperContext> for Model {
@@ -31,6 +33,7 @@ impl IntoWithContext<Prediction, PredictionMapperContext> for Model {
             presence_confidence: self.presence_confidence,
             absence_confidence: self.absence_confidence,
             severity: self.severity,
+            feedback: context.feedback,
             created_at: self.created_at.into(),
         })
     }

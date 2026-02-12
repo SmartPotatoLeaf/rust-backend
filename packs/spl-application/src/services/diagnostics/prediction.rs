@@ -1,5 +1,5 @@
-use crate::dtos::diagnostics::{CreatePredictionDto, UpdatePredictionDto};
-use crate::mappers::diagnostics::prediction::{CreatePredictionContext, UpdatePredictionContext};
+use crate::dtos::diagnostics::{CreatePredictionDto};
+use crate::mappers::diagnostics::prediction::{CreatePredictionContext};
 use crate::services::access_control::AccessControlService;
 
 use crate::dtos::diagnostics::FilterPredictionDto;
@@ -58,12 +58,12 @@ impl PredictionService {
 
     pub async fn create(&self, dto: CreatePredictionDto) -> Result<Prediction> {
         // Resolve entities from IDs concurrently
-        let user_future = self.user_repo.get_by_id(dto.user_id);
-        let image_future = self.image_repo.get_by_id(dto.image_id);
-        let label_future = self.label_repo.get_by_id(dto.label_id);
 
-        let (user_opt, image_opt, label_opt) =
-            tokio::try_join!(user_future, image_future, label_future)?;
+        let (user_opt, image_opt, label_opt) = tokio::try_join!(
+            self.user_repo.get_by_id(dto.user_id),
+            self.image_repo.get_by_id(dto.image_id),
+            self.label_repo.get_by_id(dto.label_id),
+        )?;
 
         let user = user_opt
             .ok_or_else(|| AppError::NotFound(format!("User {} not found", dto.user_id)))?;
@@ -173,6 +173,7 @@ impl PredictionService {
             // Legacy: lesion_confidence.absence
             absence_confidence: 1.0 - result.lesion_confidence,
             severity,
+            feedback: None,
             created_at: chrono::Utc::now(),
             marks: vec![],
         };
@@ -271,35 +272,6 @@ impl PredictionService {
             return Err(AppError::Forbidden);
         }
         self.prediction_repo.get_all().await
-    }
-
-    pub async fn update(
-        &self,
-        user_id: Uuid,
-        id: Uuid,
-        dto: UpdatePredictionDto,
-    ) -> Result<Prediction> {
-        let current = self
-            .prediction_repo
-            .get_by_user_id_and_id(user_id, id)
-            .await?
-            .ok_or_else(|| AppError::NotFound("Prediction not found".to_string()))?;
-
-        // Resolve label if provided
-        let label = match dto.label_id {
-            Some(label_id) => Some(
-                self.label_repo
-                    .get_by_id(label_id)
-                    .await?
-                    .ok_or_else(|| AppError::NotFound(format!("Label {} not found", label_id)))?,
-            ),
-            None => None,
-        };
-
-        let context = UpdatePredictionContext { current, label };
-        let updated = dto.into_with_context(context)?;
-
-        self.prediction_repo.update(updated).await
     }
 
     pub async fn delete(&self, user_id: Uuid, id: Uuid) -> Result<Prediction> {

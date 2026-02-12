@@ -292,6 +292,15 @@ async fn main() -> Result<()> {
         db.clone(),
         mark_type_repo.clone(),
     ));
+
+    // 7.6 Initialize Feedback Services
+    let feedback_status_repo = Arc::new(DbFeedbackStatusRepository::new(db.clone()));
+    let feedback_repo = Arc::new(DbFeedbackRepository::new(
+        db.clone(),
+        feedback_status_repo.clone(),
+        label_repo.clone(),
+    ));
+    
     // 7.4 Initialize Plot Service
     let plot_repo = Arc::new(DbPlotRepository::new(db.clone()));
     let prediction_repo = Arc::new(DbPredictionRepository::new(
@@ -300,6 +309,7 @@ async fn main() -> Result<()> {
         image_repo.clone(),
         label_repo.clone(),
         prediction_mark_repo.clone(),
+        feedback_repo.clone()
     ));
 
     // 7.5 Initialize Access Control
@@ -326,13 +336,7 @@ async fn main() -> Result<()> {
         access_control_service,
     ));
 
-    // 7.6 Initialize Feedback Services
-    let feedback_status_repo = Arc::new(DbFeedbackStatusRepository::new(db.clone()));
-    let feedback_repo = Arc::new(DbFeedbackRepository::new(
-        db.clone(),
-        feedback_status_repo.clone(),
-        label_repo.clone(),
-    ));
+   
 
     let feedback_status_service =
         Arc::new(FeedbackStatusService::new(feedback_status_repo.clone()));

@@ -25,7 +25,7 @@ pub struct UpdateFeedbackRequest {
     pub correct_label_id: Option<i32>,
 }
 
-#[derive(Debug, Serialize, ToSchema, Clone)]
+#[derive(Debug, Serialize, ToSchema, Clone, Deserialize)]
 pub struct FeedbackResponse {
     pub id: Uuid,
     pub comment: Option<String>,
@@ -36,7 +36,7 @@ pub struct FeedbackResponse {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, ToSchema, Clone)]
+#[derive(Debug, Serialize, ToSchema, Clone, Deserialize)]
 pub struct SimplifiedFeedbackResponse {
     pub id: Uuid,
     pub comment: Option<String>,

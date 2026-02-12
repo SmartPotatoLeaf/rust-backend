@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use super::{Label, PredictionMark};
+use crate::entities::feedback::Feedback;
 use crate::entities::image::Image;
 use crate::entities::user::User;
 
@@ -25,6 +26,8 @@ pub struct Prediction {
     pub absence_confidence: f32,
     /// Severity percentage of the disease (0.0 - 100.0)
     pub severity: f32,
+    /// Feedback associated with this prediction (optional, one-to-one)
+    pub feedback: Option<Feedback>,
     /// When the prediction was created
     pub created_at: DateTime<Utc>,
 }

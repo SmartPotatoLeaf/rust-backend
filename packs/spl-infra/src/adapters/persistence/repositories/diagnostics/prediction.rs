@@ -4,12 +4,14 @@ use crate::adapters::persistence::mappers::diagnostics::prediction::PredictionMa
 use sea_orm::prelude::Expr;
 use sea_orm::*;
 use spl_domain::entities::diagnostics::{Label, Prediction, PredictionMark};
+use spl_domain::entities::feedback::Feedback;
 use spl_domain::entities::image::Image;
 use spl_domain::entities::user::User;
 use spl_domain::ports::repositories::crud::CrudRepository;
 use spl_domain::ports::repositories::diagnostics::{
     LabelRepository, PredictionMarkRepository, PredictionRepository,
 };
+use spl_domain::ports::repositories::feedback::FeedbackRepository;
 use spl_domain::ports::repositories::image::ImageRepository;
 use spl_domain::ports::repositories::user::UserRepository;
 use spl_shared::adapters::persistence::repository::crud;
@@ -25,6 +27,7 @@ pub struct DbPredictionRepository {
     image_repository: Arc<dyn ImageRepository>,
     label_repository: Arc<dyn LabelRepository>,
     mark_repository: Arc<dyn PredictionMarkRepository>,
+    feedback_repository: Arc<dyn FeedbackRepository>,
 }
 
 impl DbPredictionRepository {
@@ -34,6 +37,7 @@ impl DbPredictionRepository {
         image_repository: Arc<dyn ImageRepository>,
         label_repository: Arc<dyn LabelRepository>,
         mark_repository: Arc<dyn PredictionMarkRepository>,
+        feedback_repository: Arc<dyn FeedbackRepository>,
     ) -> Self {
         Self {
             db,
@@ -41,6 +45,7 @@ impl DbPredictionRepository {
             image_repository,
             label_repository,
             mark_repository,
+            feedback_repository,
         }
     }
 
@@ -70,6 +75,12 @@ impl DbPredictionRepository {
 
     async fn find_marks(&self, prediction_id: Uuid) -> Result<Vec<PredictionMark>> {
         self.mark_repository
+            .get_by_prediction_id(prediction_id)
+            .await
+    }
+
+    async fn find_feedback(&self, prediction_id: Uuid) -> Result<Option<Feedback>> {
+        self.feedback_repository
             .get_by_prediction_id(prediction_id)
             .await
     }
@@ -114,12 +125,18 @@ impl DbPredictionRepository {
         let user_ids: Vec<Uuid> = models.iter().map(|m| m.0.user_id).collect();
 
         // 1. Concurrent Fetch Users and Marks
-        let (users_res, marks_map) = tokio::try_join!(
+        let (users, marks_map, feedbacks) = tokio::try_join!(
             self.user_repository.get_by_ids(user_ids.clone()),
-            self.find_marks_map(prediction_ids)
+            self.find_marks_map(prediction_ids.clone()),
+            self.feedback_repository
+                .get_by_predictions_ids(prediction_ids)
         )?;
 
-        let users_map: HashMap<Uuid, User> = users_res.into_iter().map(|e| (e.id, e)).collect();
+        let users_map: HashMap<Uuid, User> = users.into_iter().map(|e| (e.id, e)).collect();
+        let feedbacks_map: HashMap<Uuid, Feedback> = feedbacks
+            .into_iter()
+            .map(|f| (f.prediction_id, f))
+            .collect();
 
         models
             .into_iter()
@@ -147,12 +164,16 @@ impl DbPredictionRepository {
                         ))
                     })?;
 
+                    let feedback = feedbacks_map.get(&model.id).cloned();
+
                     let context = PredictionMapperContext {
                         user: user.unwrap(),
                         image: image.into(),
                         label: label.into(),
                         marks: marks.unwrap(),
+                        feedback,
                     };
+
                     model.into_with_context(context)
                 } else {
                     Err(AppError::NotFound(format!(
@@ -169,13 +190,18 @@ impl DbPredictionRepository {
         F: AsyncFnOnce() -> Result<(prediction::Model, User, Image, Label)>,
     {
         let (model, user, image, label) = action().await?;
-        let marks = self.find_marks(model.id).await?;
+
+        let (marks, feedback) =
+            tokio::try_join!(self.find_marks(model.id), self.find_feedback(model.id))?;
+
         let context = PredictionMapperContext {
             user,
             image,
             label,
             marks,
+            feedback,
         };
+
         model.into_with_context(context)
     }
 }
@@ -213,12 +239,10 @@ impl CrudRepository<Prediction, Uuid> for DbPredictionRepository {
     }
 
     async fn delete(&self, id: Uuid) -> Result<Prediction> {
-        let result = self.get_by_id(id).await?.ok_or_else(|| {
-            AppError::NotFound(format!(
-                "Prediction with id {} not found",
-                id
-            ))
-        });
+        let result = self
+            .get_by_id(id)
+            .await?
+            .ok_or_else(|| AppError::NotFound(format!("Prediction with id {} not found", id)));
 
         crud::delete_model::<prediction::Entity, Prediction, Uuid>(&self.db, id).await?;
 

@@ -1,4 +1,4 @@
-use crate::adapters::persistence::entities::{image, plot, user};
+use crate::adapters::persistence::entities::{feedback, image, plot, user};
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -49,6 +49,12 @@ pub enum Relation {
         to = "plot::Column::Id"
     )]
     Plot,
+    #[sea_orm(
+        has_one = "feedback::Entity",
+        from = "Column::Id",
+        to = "feedback::Column::PredictionId"
+    )]
+    Feedback
 }
 
 impl Related<super::label::Entity> for Entity {
@@ -78,6 +84,12 @@ impl Related<super::prediction_mark::Entity> for Entity {
 impl Related<plot::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Plot.def()
+    }
+}
+
+impl Related<feedback::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Feedback.def()
     }
 }
 

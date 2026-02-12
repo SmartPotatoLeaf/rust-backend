@@ -27,6 +27,7 @@ impl IntoWithContext<Prediction, CreatePredictionContext> for CreatePredictionDt
             presence_confidence: self.presence_confidence,
             absence_confidence: self.absence_confidence,
             severity: self.severity,
+            feedback: None,
             created_at: Utc::now(),
             marks: vec![],
         })

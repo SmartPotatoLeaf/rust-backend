@@ -3,9 +3,9 @@ use crate::adapters::web::models::diagnostics::{
 };
 use spl_application::dtos::diagnostics::FilterPredictionDto;
 use spl_domain::entities::diagnostics::Prediction;
+use spl_domain::entities::user::User;
 use spl_shared::error::AppError;
 use spl_shared::traits::IntoWithContext;
-use spl_domain::entities::user::User;
 
 impl From<Prediction> for PredictionResponse {
     fn from(param: Prediction) -> Self {
@@ -20,6 +20,7 @@ impl From<Prediction> for PredictionResponse {
             image: param.image.into(),
             label: param.label.into(),
             marks: param.marks.into_iter().map(Into::into).collect(),
+            feedback: param.feedback.map(Into::into),
         }
     }
 }
@@ -57,11 +58,13 @@ impl From<Prediction> for SimplifiedPredictionResponse {
             id: param.id,
             user_id: param.user.id,
             presence_confidence: param.presence_confidence,
+            absence_confidence: param.absence_confidence,
             severity: param.severity,
             label: param.label.into(),
             image: param.image.into(),
             marks: param.marks.into_iter().map(Into::into).collect(),
             created_at: param.created_at,
+            feedback: param.feedback.map(Into::into),
         }
     }
 }

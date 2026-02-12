@@ -19,7 +19,7 @@ pub struct UpdateFeedbackStatusRequest {
     pub description: Option<String>,
 }
 
-#[derive(Debug, Serialize, ToSchema, Clone)]
+#[derive(Debug, Serialize, ToSchema, Clone, Deserialize)]
 pub struct FeedbackStatusResponse {
     pub id: i32,
     pub name: String,
@@ -28,7 +28,7 @@ pub struct FeedbackStatusResponse {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, ToSchema, Clone)]
+#[derive(Debug, Serialize, ToSchema, Clone, Deserialize)]
 pub struct SimplifiedFeedbackStatusResponse {
     pub id: i32,
     pub name: String,

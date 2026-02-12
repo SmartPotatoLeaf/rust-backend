@@ -434,6 +434,7 @@ async fn test_delete_prediction_success() {
         severity: 50.0,
         created_at: chrono::Utc::now(),
         marks: vec![],
+        feedback: None
     };
 
     // Auth Mocks
