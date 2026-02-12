@@ -20,13 +20,14 @@ validator.workspace = true
 # Phase 2 Dependencies
 sea-orm.workspace = true
 axum.workspace = true
-tower-http.workspace = true
 jsonwebtoken.workspace = true
 argon2.workspace = true
-rand.workspace = true
-regex.workspace = true
 utoipa = { workspace = true, features = ["axum_extras", "uuid", "chrono"] }
 utoipa-swagger-ui = { workspace = true, features = ["axum"] }
+
+tonic = "0.11"
+prost = "0.12"
+prost-types = "0.12"
 
 # Integration Dependencies
 reqwest = { version = "0.11", features = ["json"] }
@@ -40,4 +41,7 @@ image = "0.25"
 [dev-dependencies]
 tower.workspace = true
 mockall.workspace = true
-hamcrest.workspace = true
+
+[build-dependencies]
+tonic-build = "0.11"
+protoc-bin-vendored = "3.2.0"
