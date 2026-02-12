@@ -1,0 +1,537 @@
+[
+  {
+    "description": "Revise diariamente las hojas más jóvenes y las puntas de crecimiento, ya que en esas zonas suelen aparecer los primeros síntomas de la rancha. Detectar cualquier mancha pequeña o amarillenta en esta etapa permite actuar con rapidez antes de que la enfermedad avance.",
+    "recommendation_type_id": 1,
+    "min_severity": 0,
+    "max_severity": 8
+  },
+  {
+    "description": "Retire cuidadosamente las hojas viejas, débiles o parcialmente dañadas por otros factores. Estas hojas tienden a retener humedad y son lugares donde el hongo puede desarrollarse con facilidad. Colóquelas en un saco y retírelas del campo para evitar la propagación.",
+    "recommendation_type_id": 1,
+    "min_severity": 0,
+    "max_severity": 12
+  },
+  {
+    "description": "Evite mojar las hojas al momento del riego. Cuando el agua cae sobre el follaje, las gotas quedan atrapadas y favorecen la aparición del hongo. De ser posible, utilice riego dirigido al suelo o realice riegos por surcos para mantener la parte aérea seca.",
+    "recommendation_type_id": 1,
+    "min_severity": 4,
+    "max_severity": 18
+  },
+  {
+    "description": "Mantenga el cultivo libre de malezas. Las plantas invasoras crean zonas de sombra y humedad que aceleran la aparición de la enfermedad. Una limpieza periódica permite mejorar la ventilación y reducir los microclimas húmedos.",
+    "recommendation_type_id": 1,
+    "min_severity": 3,
+    "max_severity": 20
+  },
+  {
+    "description": "Programe los riegos en la mañana. Regar al final de la tarde aumenta la humedad nocturna, que es un factor determinante para el avance del hongo. Si el terreno queda húmedo por la noche, la infección puede desarrollarse con mayor facilidad.",
+    "recommendation_type_id": 1,
+    "min_severity": 10,
+    "max_severity": 25
+  },
+  {
+    "description": "Elija siempre semillas certificadas o tubérculos saludables. Los tubérculos infectados pueden traer la enfermedad incluso sin mostrar daños visibles. Empezar con material sano reduce de forma significativa el riesgo de brotes tempranos.",
+    "recommendation_type_id": 1,
+    "min_severity": 0,
+    "max_severity": 5
+  },
+  {
+    "description": "Evite sembrar las plantas demasiado juntas. Cuando el cultivo está muy denso, el aire no circula correctamente y la humedad permanece atrapada entre las hojas. Esto favorece el desarrollo del patógeno incluso en días no lluviosos.",
+    "recommendation_type_id": 1,
+    "min_severity": 8,
+    "max_severity": 30
+  },
+  {
+    "description": "Revise periódicamente que el suelo no forme charcos. El encharcamiento favorece un ambiente húmedo donde el hongo prospera muy rápido. Si detecta acumulación de agua, realice drenajes simples para mejorar el flujo.",
+    "recommendation_type_id": 1,
+    "min_severity": 6,
+    "max_severity": 25
+  },
+  {
+    "description": "Evite trabajar el campo cuando las hojas están mojadas, especialmente después de una lluvia. Las herramientas y la ropa pueden llevar el hongo de una planta a otra sin que usted lo note, acelerando la infección.",
+    "recommendation_type_id": 1,
+    "min_severity": 12,
+    "max_severity": 30
+  },
+  {
+    "description": "Coloque paja o restos secos alrededor de la base de las plantas para evitar que el agua de lluvia salpique tierra contaminada hacia las hojas. Esta práctica sencilla reduce la posibilidad de infección por proyección de suelo.",
+    "recommendation_type_id": 1,
+    "min_severity": 0,
+    "max_severity": 15
+  },
+  {
+    "description": "Observe si las manchas pequeñas cambian de tamaño cada 48 horas. El avance rápido de las lesiones es una señal clara de que el hongo está activo y requiere más atención en la zona afectada.",
+    "recommendation_type_id": 2,
+    "min_severity": 5,
+    "max_severity": 28
+  },
+  {
+    "description": "Compare hojas nuevas con hojas viejas para determinar si la infección se está extendiendo. Si las hojas jóvenes comienzan a mostrar manchas similares, significa que el hongo está avanzando y es momento de reforzar el seguimiento.",
+    "recommendation_type_id": 2,
+    "min_severity": 10,
+    "max_severity": 32
+  },
+  {
+    "description": "Revise los tallos bajos y cercanos al suelo. Si presentan líneas negras o manchas oscuras, la enfermedad ya está afectando tejidos estructurales y requiere rápida intervención antes de que comprometa a toda la planta.",
+    "recommendation_type_id": 2,
+    "min_severity": 18,
+    "max_severity": 40
+  },
+  {
+    "description": "Analice si las lesiones aparecen concentradas en una parte del terreno o están dispersas. Los focos localizados permiten actuar de manera precisa sin necesidad de aplicar medidas a todo el cultivo.",
+    "recommendation_type_id": 2,
+    "min_severity": 12,
+    "max_severity": 38
+  },
+  {
+    "description": "Realice inspecciones temprano por la mañana para detectar humedad o moho blanco en el envés de las hojas. Este moho es un signo temprano de actividad del patógeno y permite anticipar la propagación.",
+    "recommendation_type_id": 2,
+    "min_severity": 2,
+    "max_severity": 25
+  },
+  {
+    "description": "Revise si las manchas presentan un borde amarillento. Este borde es característico de la rancha y ayuda a diferenciarla de otras enfermedades menos agresivas.",
+    "recommendation_type_id": 2,
+    "min_severity": 10,
+    "max_severity": 45
+  },
+  {
+    "description": "Observe si las hojas afectadas pierden firmeza o se caen antes de tiempo. La pérdida rápida de vigor indica un avance acelerado de la infección.",
+    "recommendation_type_id": 2,
+    "min_severity": 18,
+    "max_severity": 40
+  },
+  {
+    "description": "Evalúe constantemente la humedad del ambiente entre plantas. Si las hojas permanecen húmedas por más de dos horas en la mañana, la probabilidad de avance del hongo aumenta notablemente.",
+    "recommendation_type_id": 2,
+    "min_severity": 5,
+    "max_severity": 35
+  },
+  {
+    "description": "Registre en un cuaderno o en su celular las zonas donde la infección avanza más rápido. Tener un historial visual permite decidir si necesita acciones químicas o culturales más intensas.",
+    "recommendation_type_id": 2,
+    "min_severity": 10,
+    "max_severity": 40
+  },
+  {
+    "description": "Revise el estado del follaje en diferentes horarios del día. Los cambios rápidos entre la mañana y la tarde pueden revelar problemas que no se ven a simple vista.",
+    "recommendation_type_id": 2,
+    "min_severity": 3,
+    "max_severity": 38
+  },
+  {
+    "description": "Retire manualmente las hojas con daños moderados, asegurándose de no sacudirlas para evitar que las esporas se desprendan. Llévelas en un recipiente cerrado fuera del cultivo y disponga de ellas de manera segura.",
+    "recommendation_type_id": 3,
+    "min_severity": 20,
+    "max_severity": 50
+  },
+  {
+    "description": "Aumente la distancia entre plantas recortando suavemente algunas ramas internas. Esto mejora la ventilación natural y reduce la humedad atrapada entre el follaje.",
+    "recommendation_type_id": 3,
+    "min_severity": 15,
+    "max_severity": 45
+  },
+  {
+    "description": "Realice un aporque más alto para proteger el tallo basal. Un mejor cubrimiento del tallo evita que las salpicaduras de agua alcancen la base, reduciendo la probabilidad de infección.",
+    "recommendation_type_id": 3,
+    "min_severity": 18,
+    "max_severity": 50
+  },
+  {
+    "description": "Retire por completo las plantas que ya no muestran posibilidad de recuperación. Las plantas muy afectadas producen millones de esporas que pueden alcanzar cultivos vecinos.",
+    "recommendation_type_id": 3,
+    "min_severity": 40,
+    "max_severity": 75
+  },
+  {
+    "description": "Recorte ramas densas o que se crucen entre sí. Esto permite que el aire circule mejor y que la luz llegue a las hojas internas, reduciendo significativamente la humedad.",
+    "recommendation_type_id": 3,
+    "min_severity": 25,
+    "max_severity": 60
+  },
+  {
+    "description": "Evite que las hojas queden en contacto directo con el suelo. Las hojas que tocan el piso tienen un riesgo mucho mayor de contagio debido a la humedad y las esporas presentes en la tierra.",
+    "recommendation_type_id": 3,
+    "min_severity": 15,
+    "max_severity": 50
+  },
+  {
+    "description": "Retire los residuos de plantas enfermas inmediatamente después de podar. No deje restos sobre el suelo, ya que pueden convertirse en nuevas fuentes de infección.",
+    "recommendation_type_id": 3,
+    "min_severity": 30,
+    "max_severity": 70
+  },
+  {
+    "description": "Limpie sus herramientas después de trabajar en zonas afectadas. Esto evita que transporte el hongo involuntariamente hacia plantas sanas.",
+    "recommendation_type_id": 3,
+    "min_severity": 20,
+    "max_severity": 55
+  },
+  {
+    "description": "Revise las zonas sombreadas del cultivo y, si es posible, reduzca la sombra para evitar humedad prolongada. La enfermedad avanza más rápido en estas áreas.",
+    "recommendation_type_id": 3,
+    "min_severity": 22,
+    "max_severity": 60
+  },
+  {
+    "description": "Elimine brotes débiles o deformes. Los brotes frágiles se infectan más rápido y pueden servir como punto de inicio para una propagación mayor.",
+    "recommendation_type_id": 3,
+    "min_severity": 18,
+    "max_severity": 45
+  },
+  {
+    "description": "Aplicar un fungicida de contacto como Mancozeb, cubriendo bien toda la planta, especialmente el envés de las hojas. La distribución uniforme del producto ayuda a detener los primeros brotes de la enfermedad.",
+    "recommendation_type_id": 4,
+    "min_severity": 25,
+    "max_severity": 60
+  },
+  {
+    "description": "Utilizar fungicidas sistémicos cuando las manchas avanzan hacia los tallos. Estos productos penetran en la planta y protegen desde adentro, ofreciendo un control más profundo cuando la infección ya está establecida.",
+    "recommendation_type_id": 4,
+    "min_severity": 40,
+    "max_severity": 90
+  },
+  {
+    "description": "Repetir la aplicación del fungicida cada 7 a 10 días si hay clima húmedo o lluvias constantes. Las condiciones de humedad aceleran la degradación del producto aplicado.",
+    "recommendation_type_id": 4,
+    "min_severity": 30,
+    "max_severity": 80
+  },
+  {
+    "description": "Combinar un fungicida de contacto con uno sistémico cuando el avance de la enfermedad sea rápido. Esta combinación ofrece protección interna y externa, deteniendo el crecimiento del hongo de forma más efectiva.",
+    "recommendation_type_id": 4,
+    "min_severity": 60,
+    "max_severity": 100
+  },
+  {
+    "description": "Aplicar los productos tempranos en la mañana o en horas sin sol fuerte. El sol intenso puede quemar las hojas si el fungicida aún está húmedo, reduciendo la eficacia del tratamiento.",
+    "recommendation_type_id": 4,
+    "min_severity": 25,
+    "max_severity": 70
+  },
+  {
+    "description": "Usar fungicidas específicos para rancha cuando el daño supere el 50%. Los productos especializados ofrecen mayor rapidez de acción en etapas avanzadas de la enfermedad.",
+    "recommendation_type_id": 4,
+    "min_severity": 50,
+    "max_severity": 100
+  },
+  {
+    "description": "Cubrir cuidadosamente toda la superficie de las hojas al aplicar el producto. Si quedan zonas sin cobertura, esas áreas pueden infectarse aun cuando el resto de la planta esté protegida.",
+    "recommendation_type_id": 4,
+    "min_severity": 30,
+    "max_severity": 70
+  },
+  {
+    "description": "Utilizar un coadyuvante cuando haya lluvias frecuentes para mejorar la adherencia del fungicida. Esto ayuda a que el producto permanezca en la planta y no se lave con facilidad.",
+    "recommendation_type_id": 4,
+    "min_severity": 35,
+    "max_severity": 80
+  },
+  {
+    "description": "Evitar aplicar fungicidas en horas con viento fuerte, ya que podría desviar el producto y reducir la eficacia del tratamiento.",
+    "recommendation_type_id": 4,
+    "min_severity": 25,
+    "max_severity": 60
+  },
+  {
+    "description": "Rotar entre distintos grupos químicos de fungicidas para evitar que el hongo desarrolle resistencia. El uso repetido del mismo producto reduce su efectividad con el tiempo.",
+    "recommendation_type_id": 4,
+    "min_severity": 30,
+    "max_severity": 90
+  },
+  {
+    "description": "Retirar de manera urgente las hojas que presentan manchas extensas o bordes quemados. Estas hojas producen grandes cantidades de esporas que pueden infectar rápidamente a las plantas cercanas.",
+    "recommendation_type_id": 5,
+    "min_severity": 55,
+    "max_severity": 80
+  },
+  {
+    "description": "Aislar completamente el sector del cultivo que presenta mayor daño, evitando el ingreso de personas o herramientas que puedan llevar la enfermedad a áreas sanas.",
+    "recommendation_type_id": 5,
+    "min_severity": 60,
+    "max_severity": 100
+  },
+  {
+    "description": "Suspender el riego durante 48 horas si el suelo está demasiado húmedo. La acumulación de humedad acelera la expansión de la rancha y dificulta el control químico.",
+    "recommendation_type_id": 5,
+    "min_severity": 50,
+    "max_severity": 85
+  },
+  {
+    "description": "Eliminar completamente plantas que ya están destruidas en más del 70%. Estas plantas no se recuperarán y solo contribuyen a expandir el hongo.",
+    "recommendation_type_id": 5,
+    "min_severity": 70,
+    "max_severity": 100
+  },
+  {
+    "description": "Aplicar una segunda ronda de fungicida si observa que las manchas siguen creciendo después del primer tratamiento. Esto ayuda a detener el avance en momentos críticos.",
+    "recommendation_type_id": 5,
+    "min_severity": 65,
+    "max_severity": 100
+  },
+  {
+    "description": "Evitar mover hojas infectadas de un lado a otro. Si necesita retirarlas, hágalas caer suavemente en un recipiente, evitando sacudirlas para no liberar esporas.",
+    "recommendation_type_id": 5,
+    "min_severity": 55,
+    "max_severity": 90
+  },
+  {
+    "description": "Marcar las zonas donde la infección es más grave utilizando estacas o cintas. Esto permite identificar de manera rápida qué áreas requieren seguimiento o aplicación extra de fungicida.",
+    "recommendation_type_id": 5,
+    "min_severity": 50,
+    "max_severity": 90
+  },
+  {
+    "description": "Recortar las hojas más afectadas evitando dañar las partes sanas de la planta. Una poda cuidadosa ayuda a contener la enfermedad en su sector inicial.",
+    "recommendation_type_id": 5,
+    "min_severity": 60,
+    "max_severity": 85
+  },
+  {
+    "description": "Aumentar la frecuencia de monitoreo a inspecciones diarias cuando el daño supera el 60%. En esta etapa el avance puede ser muy rápido y requiere reacciones inmediatas.",
+    "recommendation_type_id": 5,
+    "min_severity": 60,
+    "max_severity": 100
+  },
+  {
+    "description": "Retirar plantas que estén contiguas a una muy afectada si muestran síntomas iniciales. Esto impide que el hongo se desplace por contacto directo entre hojas.",
+    "recommendation_type_id": 5,
+    "min_severity": 65,
+    "max_severity": 95
+  },
+
+  {
+    "description": "Revise la aparición de nuevas manchas después de lluvias intensas. Las condiciones húmedas y frías favorecen el desarrollo acelerado del hongo, por lo que una revisión inmediata permite detectar intensificación del daño.",
+    "recommendation_type_id": 2,
+    "min_severity": 10,
+    "max_severity": 45
+  },
+  {
+    "description": "Utilice una libreta o su celular para registrar día a día los cambios observados en las hojas afectadas. Con este seguimiento podrá identificar si la enfermedad está avanzando de manera lenta o acelerada.",
+    "recommendation_type_id": 2,
+    "min_severity": 5,
+    "max_severity": 40
+  },
+  {
+    "description": "Compare las condiciones de sombra y luz entre las distintas zonas del cultivo. La enfermedad suele avanzar más rápido en áreas sombreadas o con poca ventilación.",
+    "recommendation_type_id": 2,
+    "min_severity": 8,
+    "max_severity": 35
+  },
+  {
+    "description": "Realice observaciones más frecuentes cuando el clima esté nublado y el ambiente húmedo. Estas condiciones climáticas son ideales para la germinación de esporas.",
+    "recommendation_type_id": 2,
+    "min_severity": 12,
+    "max_severity": 35
+  },
+  {
+    "description": "Evalúe si las manchas presentan anillos concéntricos o zonas grises internas. Algunos signos visuales permiten diferenciar si es rancha o si es una enfermedad menos agresiva.",
+    "recommendation_type_id": 2,
+    "min_severity": 10,
+    "max_severity": 42
+  },
+  {
+    "description": "Inspeccione el borde de la hoja, ya que muchas veces la rancha avanza desde las puntas hacia el interior. Detectar este patrón ayuda a identificar una posible propagación temprana.",
+    "recommendation_type_id": 2,
+    "min_severity": 3,
+    "max_severity": 35
+  },
+  {
+    "description": "Saque fotografías de la misma hoja en distintos días para comparar el crecimiento de las manchas. Esta técnica sencilla ayuda a visualizar claramente el ritmo del avance.",
+    "recommendation_type_id": 2,
+    "min_severity": 5,
+    "max_severity": 40
+  },
+  {
+    "description": "Observe si las plantas afectadas empiezan a inclinarse o perder turgencia. La deshidratación repentina puede ser señal de que el hongo está afectando túneles de agua dentro del tejido vegetal.",
+    "recommendation_type_id": 2,
+    "min_severity": 20,
+    "max_severity": 45
+  },
+  {
+    "description": "Revise si hay presencia de pequeñas zonas blancas o vellosas debajo de la hoja, especialmente en la mañana. Ese moho blanco es un signo directo de actividad del hongo.",
+    "recommendation_type_id": 2,
+    "min_severity": 18,
+    "max_severity": 45
+  },
+  {
+    "description": "Evalúe la diferencia de afectación entre plantas de diferentes edades. A veces los brotes jóvenes se infectan más rápido y pueden servir como indicador del avance general.",
+    "recommendation_type_id": 2,
+    "min_severity": 10,
+    "max_severity": 38
+  },
+  {
+    "description": "Realice podas ligeras para mejorar la circulación del aire en el follaje y reducir la humedad acumulada. Esto ayuda a frenar el avance del hongo, especialmente en zonas densas del cultivo.",
+    "recommendation_type_id": 3,
+    "min_severity": 30,
+    "max_severity": 65
+  },
+  {
+    "description": "Elimine hojas que estén tocando el suelo, ya que estas hojas tienen un riesgo mayor de infección. Mantener el follaje levantado mejora la sanidad general del cultivo.",
+    "recommendation_type_id": 3,
+    "min_severity": 20,
+    "max_severity": 50
+  },
+  {
+    "description": "Retire cuidadosamente plantas que muestren síntomas avanzados en el tallo. Una planta con tallo comprometido se convierte rápidamente en fuente activa de esporas.",
+    "recommendation_type_id": 3,
+    "min_severity": 45,
+    "max_severity": 80
+  },
+  {
+    "description": "Desinfecte sus herramientas de poda con agua y jabón después de trabajar en plantas enfermas. La desinfección evita transmitir la enfermedad al resto del cultivo.",
+    "recommendation_type_id": 3,
+    "min_severity": 25,
+    "max_severity": 65
+  },
+  {
+    "description": "Saque inmediatamente del campo los restos de hojas o tallos enfermos después de podar. Dejarlos sobre la tierra promueve la liberación de esporas.",
+    "recommendation_type_id": 3,
+    "min_severity": 30,
+    "max_severity": 70
+  },
+  {
+    "description": "Aumente la separación entre plantas mediante cortes laterales ligeros para permitir mayor ventilación. Esto ayuda a reducir la humedad interna del cultivo.",
+    "recommendation_type_id": 3,
+    "min_severity": 28,
+    "max_severity": 60
+  },
+  {
+    "description": "Evite el uso excesivo de fertilizantes nitrogenados, ya que producen hojas muy tiernas que son más susceptibles a la infección.",
+    "recommendation_type_id": 3,
+    "min_severity": 20,
+    "max_severity": 55
+  },
+  {
+    "description": "Controle malezas altas alrededor del cultivo ya que estas áreas retienen humedad y facilitan la presencia de microclimas que favorecen el hongo.",
+    "recommendation_type_id": 3,
+    "min_severity": 15,
+    "max_severity": 50
+  },
+  {
+    "description": "Elimine brotes débiles o mal desarrollados para fortalecer la planta principal y evitar zonas vulnerables al hongo.",
+    "recommendation_type_id": 3,
+    "min_severity": 18,
+    "max_severity": 48
+  },
+  {
+    "description": "Apliqué un fungicida específico para rancha cuando observe que las manchas comienzan a unirse entre sí. Esta unión indica un avance rápido y requiere intervención inmediata.",
+    "recommendation_type_id": 4,
+    "min_severity": 35,
+    "max_severity": 75
+  },
+  {
+    "description": "Utilice fungicidas sistémicos cuando el hongo haya penetrado tallos y hojas internas. Los productos sistémicos protegen desde dentro del tejido e impiden el avance hacia órganos vitales.",
+    "recommendation_type_id": 4,
+    "min_severity": 50,
+    "max_severity": 95
+  },
+  {
+    "description": "Aplique la dosis correcta del fungicida según la etiqueta. La falta de producto reduce la protección y el exceso puede dañar el cultivo o afectar la salud del suelo.",
+    "recommendation_type_id": 4,
+    "min_severity": 25,
+    "max_severity": 65
+  },
+  {
+    "description": "Evite aplicar el fungicida antes de una lluvia fuerte. La lluvia puede lavar el producto y dejar la planta sin la protección necesaria.",
+    "recommendation_type_id": 4,
+    "min_severity": 30,
+    "max_severity": 70
+  },
+  {
+    "description": "Aplique fungicida cuando las hojas estén completamente secas para asegurar una mejor adherencia del producto al tejido de la planta.",
+    "recommendation_type_id": 4,
+    "min_severity": 28,
+    "max_severity": 65
+  },
+  {
+    "description": "Use protectores de manos, rostro y ropa adecuada al manipular los productos químicos. El contacto directo puede ser dañino incluso si se usa la dosis correcta.",
+    "recommendation_type_id": 4,
+    "min_severity": 25,
+    "max_severity": 90
+  },
+  {
+    "description": "Combine un fungicida preventivo con uno curativo cuando observe avance en menos de tres días. Esta estrategia dual permite frenar el hongo mientras protege nuevas hojas.",
+    "recommendation_type_id": 4,
+    "min_severity": 55,
+    "max_severity": 100
+  },
+  {
+    "description": "Rotar fungicidas de distinta composición química cada dos aplicaciones para evitar que el hongo se vuelva resistente a un producto en particular.",
+    "recommendation_type_id": 4,
+    "min_severity": 35,
+    "max_severity": 90
+  },
+  {
+    "description": "Inspeccione las hojas superiores inmediatamente después de aplicar el fungicida. Si quedan zonas sin cubrir, realice una segunda pasada con una capa ligera para asegurar protección completa.",
+    "recommendation_type_id": 4,
+    "min_severity": 30,
+    "max_severity": 70
+  },
+  {
+    "description": "Evite mezclar fungicidas sin conocer si son compatibles. La combinación incorrecta puede reducir la eficacia o incluso causar daño a la planta.",
+    "recommendation_type_id": 4,
+    "min_severity": 25,
+    "max_severity": 60
+  },
+  {
+    "description": "Retire con urgencia las hojas muy dañadas para frenar la producción de nuevas esporas. Las hojas necróticas son puntos de liberación masiva del hongo.",
+    "recommendation_type_id": 5,
+    "min_severity": 55,
+    "max_severity": 80
+  },
+  {
+    "description": "Aísle el área afectada usando cintas o estacas para evitar el paso de personas y herramientas. Esto reduce notablemente la dispersión del hongo en el campo.",
+    "recommendation_type_id": 5,
+    "min_severity": 60,
+    "max_severity": 100
+  },
+  {
+    "description": "Suspenda el riego si ve que el suelo está encharcado. El exceso de agua favorece la esporulación del hongo y reduce la efectividad de los fungicidas aplicados.",
+    "recommendation_type_id": 5,
+    "min_severity": 50,
+    "max_severity": 90
+  },
+  {
+    "description": "Elimine completamente las plantas más afectadas. Si el daño supera el 70% de la planta, es preferible retirarla para proteger las plantas sanas.",
+    "recommendation_type_id": 5,
+    "min_severity": 70,
+    "max_severity": 100
+  },
+  {
+    "description": "Refuerce el control químico con una segunda aplicación si observa crecimiento acelerado de manchas en un lapso corto. Esto ayuda a detener brotes agresivos.",
+    "recommendation_type_id": 5,
+    "min_severity": 65,
+    "max_severity": 100
+  },
+  {
+    "description": "Evite manipular plantas muy afectadas para no dispersar esporas por contacto. Si necesita retirarlas, use guantes y bolsas cerradas.",
+    "recommendation_type_id": 5,
+    "min_severity": 55,
+    "max_severity": 95
+  },
+  {
+    "description": "Priorice las zonas más afectadas del cultivo realizando una evaluación rápida y asignando recursos según el nivel de daño visible.",
+    "recommendation_type_id": 5,
+    "min_severity": 50,
+    "max_severity": 90
+  },
+  {
+    "description": "Poda las hojas cercanas a las plantas afectadas para evitar contacto directo entre hojas sanas y dañadas.",
+    "recommendation_type_id": 5,
+    "min_severity": 60,
+    "max_severity": 95
+  },
+  {
+    "description": "Aumente la frecuencia de inspecciones a diarias cuando la severidad supere el 60%. Las decisiones rápidas son cruciales en esta etapa de la infección.",
+    "recommendation_type_id": 5,
+    "min_severity": 60,
+    "max_severity": 100
+  },
+  {
+    "description": "Retire plantas contiguas a un foco severo si ya muestran señales iniciales. Esto puede evitar que el hongo se propague por contacto directo.",
+    "recommendation_type_id": 5,
+    "min_severity": 65,
+    "max_severity": 95
+  }
+]
