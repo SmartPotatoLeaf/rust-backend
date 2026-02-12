@@ -1,8 +1,8 @@
+use crate::dtos::user::LoginDto;
 use spl_domain::ports::auth::{PasswordEncoder, TokenGenerator};
 use spl_domain::ports::repositories::user::UserRepository;
 use spl_shared::error::{AppError, Result};
 use std::sync::Arc;
-use uuid::Uuid;
 
 pub struct AuthService {
     user_repo: Arc<dyn UserRepository>,
@@ -23,21 +23,27 @@ impl AuthService {
         }
     }
 
-    pub async fn login(
-        &self,
-        username: &str,
-        password: &str,
-        company_id: Option<Uuid>,
-    ) -> Result<String> {
+    pub async fn login(&self, dto: LoginDto) -> Result<String> {
+        // Validate that at least one of username or email is provided
+        if dto.username.is_none() && dto.email.is_none() {
+            return Err(AppError::ValidationError(
+                "Either username or email must be provided".to_string(),
+            ));
+        }
+
         let user = self
             .user_repo
-            .get_by_username_and_company(username, company_id)
+            .get_by_username_or_email_and_company(
+                dto.username,
+                dto.email,
+                dto.company_id,
+            )
             .await?
             .ok_or_else(|| AppError::NotFound("User not found".to_string()))?;
 
         if !self
             .password_encoder
-            .verify(password, &user.password_hash)?
+            .verify(&dto.password, &user.password_hash)?
         {
             return Err(AppError::InvalidCredentials);
         }

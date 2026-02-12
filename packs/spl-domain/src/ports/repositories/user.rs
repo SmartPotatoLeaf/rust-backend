@@ -13,6 +13,13 @@ pub trait UserRepository: CrudRepository<User, Uuid> {
         company_id: Option<Uuid>,
     ) -> Result<Option<User>>;
 
+    async fn get_by_username_or_email_and_company(
+        &self,
+        username: Option<String>,
+        email: Option<String>,
+        company_id: Option<Uuid>,
+    ) -> Result<Option<User>>;
+
     async fn get_by_company_id(&self, company_id: Uuid) -> Result<Vec<User>>;
 }
 

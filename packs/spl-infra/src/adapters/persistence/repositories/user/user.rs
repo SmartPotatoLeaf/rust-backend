@@ -94,6 +94,28 @@ impl DbUserRepository {
         let user = user.into_with_context(context)?;
         Ok(user)
     }
+
+    async fn find_with_company(
+        &self,
+        condition: Condition,
+        company_id: Option<Uuid>,
+    ) -> Result<Option<User>> {
+        let mut query = user::Entity::find()
+            .filter(condition)
+            .find_also_related(role::Entity)
+            .find_also_related(company::Entity);
+
+        if let Some(cid) = company_id {
+            query = query.filter(user::Column::CompanyId.eq(cid));
+        } else {
+            // If company_id is None, filter for users with no company (global scope/admin)
+            query = query.filter(user::Column::CompanyId.is_null());
+        }
+
+        let result = query.one(&self.db).await.map_err(AppError::from)?;
+
+        self.map_related_model(result)
+    }
 }
 
 #[async_trait::async_trait]
@@ -173,21 +195,37 @@ impl UserRepository for DbUserRepository {
         username: &str,
         company_id: Option<Uuid>,
     ) -> Result<Option<User>> {
-        let mut query = user::Entity::find()
-            .filter(user::Column::Username.eq(username))
-            .find_also_related(role::Entity)
-            .find_also_related(entities::company::Entity);
+        self.find_with_company(
+            Condition::all().add(user::Column::Username.eq(username)),
+            company_id,
+        )
+        .await
+    }
 
-        if let Some(cid) = company_id {
-            query = query.filter(user::Column::CompanyId.eq(cid));
-        } else {
-            // If company_id is None, filter for users with no company (global scope/admin)
-            query = query.filter(user::Column::CompanyId.is_null());
+    async fn get_by_username_or_email_and_company(
+        &self,
+        username: Option<String>,
+        email: Option<String>,
+        company_id: Option<Uuid>,
+    ) -> Result<Option<User>> {
+        if username.is_none() && email.is_none() {
+            return Err(AppError::ValidationError(
+                "Either username or email must be provided".to_string(),
+            ));
         }
 
-        let result = query.one(&self.db).await.map_err(AppError::from)?;
+        // Build OR condition for username or email
+        let mut condition = Condition::any();
 
-        self.map_related_model(result)
+        if let Some(uname) = username {
+            condition = condition.add(user::Column::Username.eq(uname));
+        }
+
+        if let Some(em) = email {
+            condition = condition.add(user::Column::Email.eq(em));
+        }
+
+        self.find_with_company(condition, company_id).await
     }
 
     async fn get_by_company_id(&self, company_id: Uuid) -> Result<Vec<User>> {

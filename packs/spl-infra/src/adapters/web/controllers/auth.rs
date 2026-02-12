@@ -66,11 +66,20 @@ async fn login(
     State(state): State<Arc<AppState>>,
     ValidatedJson(payload): ValidatedJson<LoginRequest>,
 ) -> impl IntoResponse {
-    match state
-        .auth_service
-        .login(&payload.username, &payload.password, payload.company_id)
-        .await
-    {
+    // Validate that at least one identifier is provided
+    if let Err(e) = payload.validate_identifier() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(StatusResponse {
+                success: false,
+                code: 400,
+                message: e,
+            }),
+        )
+            .into_response();
+    }
+
+    match state.auth_service.login(payload.into()).await {
         Ok(token) => (StatusCode::OK, Json(TokenResponse { token })).into_response(),
         Err(e) => e.into_response(),
     }

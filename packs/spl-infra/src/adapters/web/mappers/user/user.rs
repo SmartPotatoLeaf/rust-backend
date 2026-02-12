@@ -1,9 +1,20 @@
 use crate::adapters::web::models::{
-    auth::RegisterRequest,
-    user::{FullUserResponse, UserResponse},
+    auth::{LoginRequest, RegisterRequest},
+    user::{FullUserResponse, UpdateUserRequest, UserResponse},
 };
-use spl_application::dtos::user::CreateUserDto;
+use spl_application::dtos::user::{CreateUserDto, LoginDto, UpdateUserDto};
 use spl_domain::entities::user::User;
+
+impl From<LoginRequest> for LoginDto {
+    fn from(req: LoginRequest) -> Self {
+        Self {
+            username: req.username,
+            email: req.email,
+            password: req.password,
+            company_id: req.company_id,
+        }
+    }
+}
 
 impl From<RegisterRequest> for CreateUserDto {
     fn from(req: RegisterRequest) -> Self {
@@ -13,6 +24,18 @@ impl From<RegisterRequest> for CreateUserDto {
             password: req.password,
             company_id: req.company_id,
             role_name: req.role,
+        }
+    }
+}
+
+impl From<UpdateUserRequest> for UpdateUserDto {
+    fn from(req: UpdateUserRequest) -> Self {
+        Self {
+            username: req.username,
+            email: req.email,
+            password: req.password,
+            role_name: req.role,
+            company_id: req.company_id,
         }
     }
 }

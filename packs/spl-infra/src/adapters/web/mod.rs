@@ -4,6 +4,7 @@ use crate::adapters::web::controllers::{
 use crate::adapters::web::state::AppState;
 use axum::http::HeaderValue;
 use axum::Router;
+use http::{header, Method};
 use spl_shared::config::AppConfig;
 use std::sync::Arc;
 use tower_http::cors::{AllowOrigin, Any, CorsLayer};
@@ -11,7 +12,6 @@ use tracing::info;
 use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
 use utoipa::{Modify, OpenApi};
 use utoipa_swagger_ui::SwaggerUi;
-use http::{Method, header};
 
 pub mod controllers;
 pub mod mappers;
@@ -75,19 +75,18 @@ fn build_cors_layer(config: &AppConfig) -> Option<CorsLayer> {
     }
 
     Some(
-        CorsLayer::new().allow_origin(AllowOrigin::list(allowed))
+        CorsLayer::new()
+            .allow_origin(AllowOrigin::list(allowed))
             .allow_methods([
-                Method::GET, Method::POST, Method::PUT, Method::DELETE, Method::OPTIONS,
+                Method::GET,
+                Method::POST,
+                Method::PUT,
+                Method::DELETE,
+                Method::OPTIONS,
             ])
-            .allow_headers([
-                header::AUTHORIZATION,
-                header::ACCEPT,
-                header::CONTENT_TYPE,
-            ])
-            .expose_headers([
-                header::AUTHORIZATION
-            ])
-            .allow_credentials(true)
+            .allow_headers([header::AUTHORIZATION, header::ACCEPT, header::CONTENT_TYPE])
+            .expose_headers([header::AUTHORIZATION])
+            .allow_credentials(true),
     )
 }
 
@@ -114,7 +113,7 @@ pub fn router(state: Arc<AppState>) -> Router {
                 .url("/api-docs/openapi.json", openapi),
         )
         .nest(base_path, auth::router())
-        .nest(base_path, user::router())
+        .nest(base_path, user::router(state.clone()))
         .nest(base_path, companies::router(state.clone()))
         .nest(base_path, recommendation::category::router(state.clone()))
         .nest(base_path, recommendation::router(state.clone()))

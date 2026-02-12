@@ -12,5 +12,18 @@ pub struct CreateUserDto {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateUserDto {
-    // Fields to be added as needed.
+    pub username: Option<String>,
+    pub email: Option<String>,
+    pub password: Option<String>,
+    pub role_name: Option<String>,
+    pub company_id: Option<Uuid>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LoginDto {
+    pub username: Option<String>,
+    pub email: Option<String>,
+    pub password: String,
+    pub company_id: Option<Uuid>,
+}
+
