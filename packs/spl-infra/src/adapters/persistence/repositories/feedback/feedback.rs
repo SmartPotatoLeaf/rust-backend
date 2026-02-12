@@ -2,10 +2,10 @@ use crate::adapters::persistence::entities::diagnostics::{label, prediction};
 use crate::adapters::persistence::entities::feedback::{self, status};
 use crate::adapters::persistence::mappers::feedback::FeedbackMapperContext;
 use sea_orm::*;
-use spl_domain::entities::diagnostics::Label;
+use spl_domain::entities::diagnostics::{Label, Prediction};
 use spl_domain::entities::feedback::{Feedback, FeedbackStatus};
 use spl_domain::ports::repositories::crud::CrudRepository;
-use spl_domain::ports::repositories::diagnostics::LabelRepository;
+use spl_domain::ports::repositories::diagnostics::{LabelRepository, PredictionRepository};
 use spl_domain::ports::repositories::feedback::{FeedbackRepository, FeedbackStatusRepository};
 use spl_shared::adapters::persistence::repository::crud;
 use spl_shared::error::{AppError, Result};
@@ -17,6 +17,7 @@ pub struct DbFeedbackRepository {
     db: DatabaseConnection,
     status_repository: Arc<dyn FeedbackStatusRepository>,
     label_repository: Arc<dyn LabelRepository>,
+    prediction_repository: Arc<dyn PredictionRepository>,
 }
 
 impl DbFeedbackRepository {
@@ -24,11 +25,13 @@ impl DbFeedbackRepository {
         db: DatabaseConnection,
         status_repository: Arc<dyn FeedbackStatusRepository>,
         label_repository: Arc<dyn LabelRepository>,
+        prediction_repository: Arc<dyn PredictionRepository>,
     ) -> Self {
         Self {
             db,
             status_repository,
             label_repository,
+            prediction_repository,
         }
     }
 
@@ -36,8 +39,10 @@ impl DbFeedbackRepository {
         &self,
         status_id: i32,
         label_id: Option<i32>,
-    ) -> Result<(FeedbackStatus, Option<Label>)> {
+        prediction_id: Uuid,
+    ) -> Result<(FeedbackStatus, Option<Label>, Prediction)> {
         let status_future = self.status_repository.get_by_id(status_id);
+        let prediction_future = self.prediction_repository.get_by_id(prediction_id);
 
         let label_future = if let Some(lid) = label_id {
             Some(self.label_repository.get_by_id(lid))
@@ -46,12 +51,14 @@ impl DbFeedbackRepository {
         };
 
         let status_opt;
+        let prediction_opt;
         let mut label_opt = None;
 
         if let Some(label) = label_future {
-            (status_opt, label_opt) = tokio::try_join!(status_future, label)?
+            (status_opt, label_opt, prediction_opt) =
+                tokio::try_join!(status_future, label, prediction_future)?
         } else {
-            status_opt = status_future.await?;
+            (status_opt, prediction_opt) = tokio::try_join!(status_future, prediction_future)?;
         }
 
         let status = status_opt.ok_or_else(|| {
@@ -67,7 +74,11 @@ impl DbFeedbackRepository {
                 None
             };
 
-        Ok((status, label))
+        let prediction = prediction_opt.ok_or_else(|| {
+            AppError::NotFound(format!("Prediction with id {} not found", prediction_id))
+        })?;
+
+        Ok((status, label, prediction))
     }
 
     fn map_model(
@@ -142,10 +153,11 @@ impl CrudRepository<Feedback, Uuid> for DbFeedbackRepository {
 
     async fn create(&self, entity: Feedback) -> Result<Feedback> {
         self.with_map(|| async {
-            let (status, correct_label) = self
+            let (status, correct_label, _) = self
                 .find_relations(
                     entity.status.id,
                     entity.correct_label.as_ref().map(|l| l.id),
+                    entity.prediction_id,
                 )
                 .await?;
 
@@ -158,10 +170,11 @@ impl CrudRepository<Feedback, Uuid> for DbFeedbackRepository {
 
     async fn update(&self, entity: Feedback) -> Result<Feedback> {
         self.with_map(|| async {
-            let (status, correct_label) = self
+            let (status, correct_label, _) = self
                 .find_relations(
                     entity.status.id,
                     entity.correct_label.as_ref().map(|l| l.id),
+                    entity.prediction_id,
                 )
                 .await?;
 

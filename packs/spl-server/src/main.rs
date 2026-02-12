@@ -322,7 +322,7 @@ async fn main() -> Result<()> {
 
     let plot_service = Arc::new(PlotService::new(
         plot_repo,
-        prediction_repo,
+        prediction_repo.clone(),
         access_control_service,
     ));
 
@@ -332,6 +332,7 @@ async fn main() -> Result<()> {
         db.clone(),
         feedback_status_repo.clone(),
         label_repo.clone(),
+        prediction_repo
     ));
 
     let feedback_status_service =
