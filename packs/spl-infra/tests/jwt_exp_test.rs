@@ -14,6 +14,7 @@ fn test_jwt_expiration() {
             port: 8080,
             jwt_secret: "secret".to_string(),
             jwt_expiration_hours: 1,
+            cors_allowed_origins: None,
         },
         database: DatabaseConfig {
             url: "".to_string(),

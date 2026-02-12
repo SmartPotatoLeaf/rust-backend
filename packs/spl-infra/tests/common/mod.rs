@@ -140,6 +140,7 @@ pub fn build_app_full(
             port: 8080,
             jwt_secret: "test_secret".into(),
             jwt_expiration_hours: 24,
+            cors_allowed_origins: None,
         },
         
         database: spl_shared::config::DatabaseConfig {

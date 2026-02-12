@@ -16,6 +16,8 @@ pub struct ServerConfig {
     pub port: u16,
     pub jwt_secret: String,
     pub jwt_expiration_hours: u64,
+    /// Allowed CORS origins. When empty or missing, CORS headers are not added.
+    pub cors_allowed_origins: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
