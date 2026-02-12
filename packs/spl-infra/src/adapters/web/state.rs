@@ -14,6 +14,8 @@ use spl_shared::config::AppConfig;
 use std::sync::Arc;
 
 use std::collections::HashMap;
+use spl_application::services::feedback::{FeedbackService};
+use spl_application::services::feedback::status::FeedbackStatusService;
 
 pub struct AppState {
     pub config: Arc<AppConfig>,
@@ -28,6 +30,8 @@ pub struct AppState {
     pub mark_type_service: Arc<MarkTypeService>,
     pub prediction_service: Arc<PredictionService>,
     pub plot_service: Arc<PlotService>,
+    pub feedback_service: Arc<FeedbackService>,
+    pub feedback_status_service: Arc<FeedbackStatusService>,
     pub roles: HashMap<String, i16>,
     // Integration clients
     pub model_client: Arc<dyn ModelPredictionClient>,
@@ -49,6 +53,8 @@ impl AppState {
         mark_type_service: Arc<MarkTypeService>,
         prediction_service: Arc<PredictionService>,
         plot_service: Arc<PlotService>,
+        feedback_service: Arc<FeedbackService>,
+        feedback_status_service: Arc<FeedbackStatusService>,
         roles: HashMap<String, i16>,
         model_client: Arc<dyn ModelPredictionClient>,
         storage_client: Arc<dyn BlobStorageClient>,
@@ -66,6 +72,8 @@ impl AppState {
             mark_type_service,
             prediction_service,
             plot_service,
+            feedback_service,
+            feedback_status_service,
             roles,
             model_client,
             storage_client,

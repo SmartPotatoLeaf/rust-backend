@@ -1,6 +1,4 @@
-use crate::adapters::web::controllers::{
-    auth, companies, diagnostics, plots, recommendation, user,
-};
+use crate::adapters::web::controllers::{auth, companies, diagnostics, feedback, plots, recommendation, user};
 use crate::adapters::web::state::AppState;
 use axum::http::HeaderValue;
 use axum::Router;
@@ -103,6 +101,8 @@ pub fn router(state: Arc<AppState>) -> Router {
     openapi.merge(diagnostics::labels::LabelsApi::openapi());
     openapi.merge(diagnostics::mark_types::MarkTypesApi::openapi());
     openapi.merge(diagnostics::prediction::PredictionApi::openapi());
+    openapi.merge(feedback::status::FeedbackStatusApi::openapi());
+    openapi.merge(feedback::feedback::FeedbackApi::openapi());
 
     let addon = SecurityAddon {};
     addon.modify(&mut openapi);
@@ -120,7 +120,9 @@ pub fn router(state: Arc<AppState>) -> Router {
         .nest(base_path, diagnostics::labels::router(state.clone()))
         .nest(base_path, diagnostics::mark_types::router(state.clone()))
         .nest(base_path, diagnostics::prediction::router(state.clone()))
-        .nest(base_path, plots::router(state.clone()));
+        .nest(base_path, plots::router(state.clone()))
+        .nest(base_path, feedback::status::router(state.clone()))
+        .nest(base_path, feedback::router());
 
     if let Some(cors_layer) = build_cors_layer(state.config.as_ref()) {
         info!("CORS layer enabled");
