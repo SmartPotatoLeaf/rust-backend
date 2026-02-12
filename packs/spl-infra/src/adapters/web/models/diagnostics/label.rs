@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use spl_shared::validation::{validate_alphanumeric, validate_range_min_max};
 use utoipa::ToSchema;
@@ -52,8 +53,8 @@ pub struct LabelResponse {
     pub min: f32,
     pub max: f32,
     pub weight: i32,
-    pub created_at: String,
-    pub updated_at: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize, ToSchema, Deserialize, Clone)]

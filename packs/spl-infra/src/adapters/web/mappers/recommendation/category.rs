@@ -31,8 +31,8 @@ impl From<Category> for RecommendationCategoryResponse {
             id: entity.id,
             name: entity.name,
             description: entity.description,
-            created_at: entity.created_at.to_rfc3339(),
-            updated_at: entity.updated_at.to_rfc3339(),
+            created_at: entity.created_at,
+            updated_at: entity.updated_at,
         }
     }
 }

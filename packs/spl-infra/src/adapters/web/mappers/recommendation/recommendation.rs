@@ -36,8 +36,8 @@ impl From<Recommendation> for RecommendationResponse {
             category: entity.category.into(),
             min_severity: entity.min_severity,
             max_severity: entity.max_severity,
-            created_at: entity.created_at.to_rfc3339(),
-            updated_at: entity.updated_at.to_rfc3339(),
+            created_at: entity.created_at,
+            updated_at: entity.updated_at,
         }
     }
 }

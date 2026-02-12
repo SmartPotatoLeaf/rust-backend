@@ -28,7 +28,7 @@ impl From<MarkType> for MarkTypeResponse {
             id: mark_type.id,
             name: mark_type.name,
             description: mark_type.description,
-            created_at: mark_type.created_at.to_rfc3339(),
+            created_at: mark_type.created_at,
         }
     }
 }

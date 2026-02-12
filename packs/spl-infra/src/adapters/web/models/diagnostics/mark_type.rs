@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use spl_shared::validation::validate_alphanumeric;
 use utoipa::ToSchema;
@@ -24,7 +25,7 @@ pub struct MarkTypeResponse {
     pub id: i32,
     pub name: String,
     pub description: Option<String>,
-    pub created_at: String,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize, ToSchema, Clone, Deserialize)]

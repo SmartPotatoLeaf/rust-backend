@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -12,7 +13,7 @@ pub struct UserResponse {
     pub email: String,
     pub role: String,
     pub company_id: Option<Uuid>,
-    pub created_at: String,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -22,7 +23,7 @@ pub struct FullUserResponse {
     pub email: String,
     pub role: String,
     pub company: Option<CompanyResponse>,
-    pub created_at: String,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Deserialize, Validate, ToSchema)]

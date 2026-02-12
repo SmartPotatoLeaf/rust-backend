@@ -29,8 +29,8 @@ impl From<FeedbackStatus> for FeedbackStatusResponse {
             id: status.id,
             name: status.name,
             description: status.description,
-            created_at: status.created_at.to_rfc3339(),
-            updated_at: status.updated_at.to_rfc3339(),
+            created_at: status.created_at,
+            updated_at: status.updated_at,
         }
     }
 }

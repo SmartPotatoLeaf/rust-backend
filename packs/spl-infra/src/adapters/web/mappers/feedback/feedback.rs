@@ -31,8 +31,8 @@ impl From<Feedback> for FeedbackResponse {
             status: feedback.status.into(),
             correct_label: feedback.correct_label.map(Into::into),
             prediction_id: feedback.prediction_id,
-            created_at: feedback.created_at.to_rfc3339(),
-            updated_at: feedback.updated_at.to_rfc3339(),
+            created_at: feedback.created_at,
+            updated_at: feedback.updated_at,
         }
     }
 }
@@ -45,7 +45,7 @@ impl From<Feedback> for SimplifiedFeedbackResponse {
             prediction_id: feedback.prediction_id,
             correct_label: feedback.correct_label.map(Into::into),
             status: feedback.status.into(),
-            updated_at: feedback.updated_at.to_rfc3339(),
+            updated_at: feedback.updated_at,
         }
     }
 }

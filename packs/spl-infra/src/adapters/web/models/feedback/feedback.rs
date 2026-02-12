@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use crate::adapters::web::models::diagnostics::{LabelResponse, SimplifiedLabelResponse};
 use crate::adapters::web::models::feedback::status::{
     FeedbackStatusResponse, SimplifiedFeedbackStatusResponse,
@@ -31,8 +32,8 @@ pub struct FeedbackResponse {
     pub status: FeedbackStatusResponse,
     pub correct_label: Option<LabelResponse>,
     pub prediction_id: Uuid,
-    pub created_at: String,
-    pub updated_at: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize, ToSchema, Clone)]
@@ -42,5 +43,5 @@ pub struct SimplifiedFeedbackResponse {
     pub prediction_id: Uuid,
     pub correct_label: Option<SimplifiedLabelResponse>,
     pub status: SimplifiedFeedbackStatusResponse,
-    pub updated_at: String,
+    pub updated_at: DateTime<Utc>,
 }

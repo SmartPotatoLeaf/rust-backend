@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use spl_shared::validation::validate_range_min_max;
 use utoipa::ToSchema;
@@ -50,8 +51,8 @@ pub struct RecommendationResponse {
     pub category: RecommendationCategoryResponse,
     pub min_severity: f32,
     pub max_severity: f32,
-    pub created_at: String,
-    pub updated_at: String,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize, ToSchema, Clone, Deserialize)]

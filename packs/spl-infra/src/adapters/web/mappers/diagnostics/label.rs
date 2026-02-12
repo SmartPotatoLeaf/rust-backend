@@ -37,8 +37,8 @@ impl From<Label> for LabelResponse {
             min: label.min,
             max: label.max,
             weight: label.weight,
-            created_at: label.created_at.to_rfc3339(),
-            updated_at: label.updated_at.to_rfc3339(),
+            created_at: label.created_at,
+            updated_at: label.updated_at,
         }
     }
 }

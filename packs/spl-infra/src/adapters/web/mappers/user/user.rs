@@ -48,7 +48,7 @@ impl From<User> for UserResponse {
             email: user.email,
             role: user.role.name,
             company_id: user.company.map(|c| c.id),
-            created_at: user.created_at.to_rfc3339(),
+            created_at: user.created_at,
         }
     }
 }
@@ -61,7 +61,7 @@ impl From<User> for FullUserResponse {
             email: user.email,
             role: user.role.name,
             company: user.company.map(|c| c.into()),
-            created_at: user.created_at.to_rfc3339(),
+            created_at: user.created_at,
         }
     }
 }

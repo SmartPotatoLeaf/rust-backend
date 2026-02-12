@@ -28,8 +28,8 @@ impl From<Company> for CompanyResponse {
             id: company.id,
             name: company.name,
             description: company.description,
-            created_at: company.created_at.to_rfc3339(),
-            updated_at: company.updated_at.to_rfc3339(),
+            created_at: company.created_at,
+            updated_at: company.updated_at,
         }
     }
 }
