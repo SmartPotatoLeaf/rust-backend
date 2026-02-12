@@ -43,6 +43,9 @@ impl From<Feedback> for SimplifiedFeedbackResponse {
             id: feedback.id,
             comment: feedback.comment,
             prediction_id: feedback.prediction_id,
+            correct_label: feedback.correct_label.map(Into::into),
+            status: feedback.status.into(),
+            updated_at: feedback.updated_at.to_rfc3339(),
         }
     }
 }

@@ -1,5 +1,7 @@
-use crate::adapters::web::models::diagnostics::LabelResponse;
-use crate::adapters::web::models::feedback::status::FeedbackStatusResponse;
+use crate::adapters::web::models::diagnostics::{LabelResponse, SimplifiedLabelResponse};
+use crate::adapters::web::models::feedback::status::{
+    FeedbackStatusResponse, SimplifiedFeedbackStatusResponse,
+};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -38,5 +40,7 @@ pub struct SimplifiedFeedbackResponse {
     pub id: Uuid,
     pub comment: Option<String>,
     pub prediction_id: Uuid,
+    pub correct_label: Option<SimplifiedLabelResponse>,
+    pub status: SimplifiedFeedbackStatusResponse,
+    pub updated_at: String,
 }
-
