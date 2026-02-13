@@ -59,6 +59,7 @@ impl From<Prediction> for SimplifiedPredictionResponse {
             user_id: param.user.id,
             presence_confidence: param.presence_confidence,
             absence_confidence: param.absence_confidence,
+            plot_id: param.plot_id,
             severity: param.severity,
             label: param.label.into(),
             image: param.image.into(),

@@ -33,6 +33,7 @@ pub struct SimplifiedPredictionResponse {
     pub absence_confidence: f32,
     pub severity: f32,
     pub label: SimplifiedLabelResponse,
+    pub plot_id: Option<Uuid>,
     pub image: ImageResponse,
     pub marks: Vec<PredictionMarkResponse>,
     pub feedback: Option<SimplifiedFeedbackResponse>,

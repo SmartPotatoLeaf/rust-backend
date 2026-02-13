@@ -325,7 +325,7 @@ impl PredictionRepository for DbPredictionRepository {
         offset: u64,
         limit: u64,
     ) -> Result<(u64, Vec<Prediction>)> {
-        let query = self.build_filter_query(user_ids, labels, plot_ids, min_date, max_date);
+        let query = Self::build_filter_query(user_ids, labels, plot_ids, min_date, max_date);
 
         // Count total before pagination
         let total = query
@@ -348,42 +348,53 @@ impl PredictionRepository for DbPredictionRepository {
 }
 
 impl DbPredictionRepository {
-    fn build_filter_query(
-        &self,
+    pub fn build_plots_condition(plot_ids: Vec<Option<Uuid>>) -> Condition {
+        let mut condition = Condition::any();
+        let mut has_null = false;
+        let mut ids = Vec::new();
+
+        for pid in plot_ids {
+            match pid {
+                Some(id) => {
+                    if !id.is_nil() {
+                        ids.push(id)
+                    } else {
+                        has_null = true
+                    };
+                }
+                None => has_null = true,
+            }
+        }
+
+        if !ids.is_empty() {
+            condition = condition.add(prediction::Column::PlotId.is_in(ids));
+        }
+        if has_null {
+            condition = condition.add(prediction::Column::PlotId.is_null());
+        }
+
+        condition
+    }
+
+    pub fn add_filter_query<E>(
+        select: Select<E>,
         user_ids: Vec<Uuid>,
         labels: Option<Vec<String>>,
         plot_ids: Option<Vec<Option<Uuid>>>,
         min_date: Option<chrono::DateTime<chrono::Utc>>,
         max_date: Option<chrono::DateTime<chrono::Utc>>,
-    ) -> Select<prediction::Entity> {
-        let mut query =
-            prediction::Entity::find().filter(prediction::Column::UserId.is_in(user_ids));
+    ) -> Select<E>
+    where
+        E: EntityTrait,
+    {
+        let mut query = select.filter(prediction::Column::UserId.is_in(user_ids));
 
         if let Some(labels) = labels {
-            query = query
-                .join(JoinType::InnerJoin, prediction::Relation::Label.def())
-                .filter(label::Column::Name.is_in(labels));
+            query = query.filter(label::Column::Name.is_in(labels));
         }
 
         if let Some(plot_ids) = plot_ids {
-            let mut condition = Condition::any();
-            let mut has_null = false;
-            let mut ids = Vec::new();
-
-            for pid in plot_ids {
-                match pid {
-                    Some(id) => ids.push(id),
-                    None => has_null = true,
-                }
-            }
-
-            if !ids.is_empty() {
-                condition = condition.add(prediction::Column::PlotId.is_in(ids));
-            }
-            if has_null {
-                condition = condition.add(prediction::Column::PlotId.is_null());
-            }
-
+            let condition = DbPredictionRepository::build_plots_condition(plot_ids);
             query = query.filter(condition);
         }
 
@@ -396,5 +407,24 @@ impl DbPredictionRepository {
         }
 
         query
+    }
+
+    pub fn build_filter_query(
+        user_ids: Vec<Uuid>,
+        labels: Option<Vec<String>>,
+        plot_ids: Option<Vec<Option<Uuid>>>,
+        min_date: Option<chrono::DateTime<chrono::Utc>>,
+        max_date: Option<chrono::DateTime<chrono::Utc>>,
+    ) -> Select<prediction::Entity> {
+        let mut query = prediction::Entity::find();
+
+        if labels.is_some() {
+            query = query.join(JoinType::InnerJoin, prediction::Relation::Label.def())
+        }
+
+        Self::add_filter_query(
+            query, user_ids, labels, plot_ids, // plot_ids will be handled separately
+            min_date, max_date,
+        )
     }
 }
