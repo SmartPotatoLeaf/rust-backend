@@ -1,4 +1,6 @@
-use crate::adapters::web::controllers::{auth, companies, dashboard, diagnostics, feedback, plots, recommendation, user};
+use crate::adapters::web::controllers::{
+    auth, companies, dashboard, diagnostics, feedback, plots, recommendation, user,
+};
 use crate::adapters::web::state::AppState;
 use axum::http::HeaderValue;
 use axum::Router;
@@ -59,33 +61,42 @@ fn build_cors_layer(config: &AppConfig) -> Option<CorsLayer> {
         return None;
     }
 
-    if origins.iter().any(|origin| origin == "*") {
-        return Some(CorsLayer::new().allow_origin(Any));
+    let allow_any = origins.iter().any(|origin| origin == "*");
+
+    let allow_origin: AllowOrigin;
+
+    if allow_any {
+        allow_origin = AllowOrigin::any();
+    } else {
+        let allowed: Vec<HeaderValue> = origins
+            .iter()
+            .filter_map(|origin| HeaderValue::from_str(origin).ok())
+            .collect();
+
+        if allowed.is_empty() {
+            return None;
+        }
+
+        allow_origin = AllowOrigin::list(allowed);
     }
 
-    let allowed: Vec<HeaderValue> = origins
-        .iter()
-        .filter_map(|origin| HeaderValue::from_str(origin).ok())
-        .collect();
+    let cors_layer = CorsLayer::new()
+        .allow_origin(allow_origin)
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::OPTIONS,
+        ])
+        .allow_headers([header::AUTHORIZATION, header::ACCEPT, header::CONTENT_TYPE])
+        .expose_headers([header::AUTHORIZATION]);
 
-    if allowed.is_empty() {
-        return None;
-    }
-
-    Some(
-        CorsLayer::new()
-            .allow_origin(AllowOrigin::list(allowed))
-            .allow_methods([
-                Method::GET,
-                Method::POST,
-                Method::PUT,
-                Method::DELETE,
-                Method::OPTIONS,
-            ])
-            .allow_headers([header::AUTHORIZATION, header::ACCEPT, header::CONTENT_TYPE])
-            .expose_headers([header::AUTHORIZATION])
-            .allow_credentials(true),
-    )
+    Some(if allow_any {
+        cors_layer
+    } else {
+        cors_layer.allow_credentials(true)
+    })
 }
 
 pub fn router(state: Arc<AppState>) -> Router {
