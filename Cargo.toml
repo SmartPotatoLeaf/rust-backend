@@ -49,3 +49,19 @@ utoipa-swagger-ui = { version = "6.0", features = ["axum"] }
 mockall = "0.12"
 tower = { version = "0.4", features = ["util"] }
 hamcrest = "0.1"
+
+[profile.release]
+opt-level = 3           # Maximum optimization for speed
+lto = "thin"            # Thin LTO (faster than "fat", good balance)
+codegen-units = 16      # Default for better compile time (reduce for smaller binary)
+strip = true            # Strip symbols for smaller binary
+panic = "abort"         # Abort on panic for smaller binary
+
+# Alternative profile for smallest possible binary (slower build)
+# Use with: cargo build --profile release-small
+[profile.release-small]
+inherits = "release"
+opt-level = "z"         # Optimize for size
+lto = "fat"             # Fat LTO for maximum optimization
+codegen-units = 1       # Single codegen unit for better optimization
+
