@@ -1,4 +1,6 @@
 use async_trait::async_trait;
+use chrono::Utc;
+use chrono::DateTime;
 use mockall::mock;
 use spl_domain::entities::diagnostics::{MarkType, Prediction, PredictionMark};
 use spl_domain::ports::auth::{PasswordEncoder, TokenGenerator};
@@ -21,7 +23,9 @@ use spl_domain::{
 };
 use spl_shared::error::Result;
 use uuid::Uuid;
+use spl_domain::entities::dashboard::DashboardSummary;
 use spl_domain::entities::feedback::Feedback;
+use spl_domain::entities::plot::Plot;
 
 mock! {
     pub UserRepository {}
@@ -164,6 +168,7 @@ mock! {
     #[async_trait]
     impl repositories::plot::PlotRepository for PlotRepository {
         async fn get_by_company_id(&self, company_id: Uuid) -> Result<Vec<entities::plot::Plot>>;
+        async fn get_all_by_company_id(&self, company_id: Uuid) -> Result<Vec<Plot>>;
         async fn get_by_company_id_and_id(&self, company_id: Uuid, id: Uuid) -> Result<Option<entities::plot::Plot>>;
         async fn get_detailed(
             &self,
@@ -247,6 +252,22 @@ mock! {
         async fn create_many(&self, marks: Vec<entities::diagnostics::PredictionMark>) -> Result<Vec<entities::diagnostics::PredictionMark>>;
         async fn get_by_prediction_id(&self, prediction_id: Uuid) -> Result<Vec<entities::diagnostics::PredictionMark>>;
         async fn get_by_predictions_ids(&self, prediction_id: Vec<Uuid>) -> Result<Vec<entities::diagnostics::PredictionMark>>;
+    }
+}
+
+mock! {
+    pub DashboardSummaryRepository {}
+
+    #[async_trait]
+    impl repositories::dashboard::DashboardSummaryRepository for DashboardSummaryRepository {
+        async fn get_summary(
+        &self,
+        users_ids: Vec<Uuid>,
+        min_date: Option<DateTime<Utc>>,
+        max_date: Option<DateTime<Utc>>,
+        plot_ids: Vec<Option<Uuid>>,
+        labels: Option<Vec<String>>,
+    ) -> Result<DashboardSummary>;
     }
 }
 

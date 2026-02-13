@@ -4,7 +4,7 @@ use spl_application::services::{
     auth::AuthService,
     company::CompanyService,
     diagnostics::{LabelService, MarkTypeService, PredictionService},
-    feedback::{FeedbackService},
+    feedback::FeedbackService,
     plot::PlotService,
     recommendation,
     recommendation::RecommendationService,
@@ -20,7 +20,9 @@ use std::sync::Arc;
 
 pub mod mocks;
 pub use mocks::*;
+use spl_application::services::dashboard::DashboardService;
 use spl_application::services::feedback::status::FeedbackStatusService;
+use spl_application::services::image::ImageService;
 
 pub fn build_app(
     user_repo: MockUserRepository,
@@ -126,23 +128,29 @@ pub fn build_app_full(
     ));
 
     let plot_service = Arc::new(PlotService::new(
-        plot_repo,
-        prediction_repo,
+        plot_repo.clone(),
+        prediction_repo.clone(),
         access_control_service,
     ));
 
-    let image_repo = Arc::new(mock_image_repo);
-    let image_service = Arc::new(spl_application::services::image::ImageService::new(
-        image_repo,
+    // Initialize Dashboard Service
+    let dashboard_repo = Arc::new(MockDashboardSummaryRepository::new());
+    let dashboard_service = Arc::new(DashboardService::new(
+        dashboard_repo,
+        label_repo.clone(),
+        plot_repo.clone(),
+        user_repo.clone(),
     ));
+
+    let image_repo = Arc::new(mock_image_repo);
+    let image_service = Arc::new(ImageService::new(image_repo));
 
     // Initialize feedback services
     let feedback_status_repo = Arc::new(MockFeedbackStatusRepository::new());
     let feedback_repo = Arc::new(MockFeedbackRepository::new());
-    
-    let feedback_status_service = Arc::new(FeedbackStatusService::new(
-        feedback_status_repo.clone(),
-    ));
+
+    let feedback_status_service =
+        Arc::new(FeedbackStatusService::new(feedback_status_repo.clone()));
     let feedback_service = Arc::new(FeedbackService::new(
         feedback_repo,
         feedback_status_repo,
@@ -157,7 +165,7 @@ pub fn build_app_full(
             jwt_expiration_hours: 24,
             cors_allowed_origins: None,
         },
-        
+
         database: spl_shared::config::DatabaseConfig {
             url: "".into(),
             max_connections: None,
@@ -203,6 +211,7 @@ pub fn build_app_full(
         mark_type_service,
         prediction_service,
         plot_service,
+        dashboard_service,
         feedback_service,
         feedback_status_service,
         roles,
