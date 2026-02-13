@@ -1,5 +1,6 @@
 pub mod auth;
 pub mod companies;
+pub mod dashboard;
 pub mod diagnostics;
 pub mod feedback;
 pub mod plots;

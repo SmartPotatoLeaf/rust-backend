@@ -5,3 +5,4 @@ pub mod image;
 pub mod plot;
 pub mod recommendation;
 pub mod user;
+pub mod dashboard;

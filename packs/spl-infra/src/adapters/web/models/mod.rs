@@ -1,6 +1,7 @@
 pub mod auth;
 pub mod common;
 pub mod company;
+pub mod dashboard;
 pub mod diagnostics;
 pub mod feedback;
 pub mod health;

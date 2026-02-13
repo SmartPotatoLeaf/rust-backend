@@ -1,6 +1,7 @@
 use anyhow::Result;
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
-use spl_application::services::feedback::{FeedbackService};
+use spl_application::services::feedback::status::FeedbackStatusService;
+use spl_application::services::feedback::FeedbackService;
 use spl_application::{
     services,
     services::{
@@ -25,6 +26,8 @@ use spl_infra::adapters::integrations::{
     },
     storage::{azure::AzureBlobClient, local::LocalFileSystemClient, mock::MockBlobClient},
 };
+use spl_infra::adapters::persistence::repositories::dashboard::DbDashboardSummaryRepository;
+use spl_infra::adapters::persistence::repositories::DbFeedbackStatusRepository;
 use spl_infra::adapters::{
     auth::{jwt::JwtTokenGenerator, password::Argon2PasswordEncoder},
     persistence::{
@@ -35,7 +38,7 @@ use spl_infra::adapters::{
                 DbLabelRepository, DbMarkTypeRepository, DbPredictionMarkRepository,
                 DbPredictionRepository,
             },
-            feedback::{DbFeedbackRepository},
+            feedback::DbFeedbackRepository,
             image::DbImageRepository,
             plot::DbPlotRepository,
             recommendation::DbRecommendationRepository,
@@ -51,8 +54,6 @@ use std::sync::Arc;
 use std::time::Duration;
 use tracing::{error, info};
 use uuid::Uuid;
-use spl_application::services::feedback::status::FeedbackStatusService;
-use spl_infra::adapters::persistence::repositories::DbFeedbackStatusRepository;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -300,7 +301,7 @@ async fn main() -> Result<()> {
         feedback_status_repo.clone(),
         label_repo.clone(),
     ));
-    
+
     // 7.4 Initialize Plot Service
     let plot_repo = Arc::new(DbPlotRepository::new(db.clone()));
     let prediction_repo = Arc::new(DbPredictionRepository::new(
@@ -309,7 +310,7 @@ async fn main() -> Result<()> {
         image_repo.clone(),
         label_repo.clone(),
         prediction_mark_repo.clone(),
-        feedback_repo.clone()
+        feedback_repo.clone(),
     ));
 
     // 7.5 Initialize Access Control
@@ -331,12 +332,19 @@ async fn main() -> Result<()> {
     ));
 
     let plot_service = Arc::new(PlotService::new(
-        plot_repo,
+        plot_repo.clone(),
         prediction_repo.clone(),
         access_control_service,
     ));
 
-   
+    // 7.7 Initialize Dashboard Service
+    let dashboard_repo = Arc::new(DbDashboardSummaryRepository::new(db.clone()));
+    let dashboard_service = Arc::new(services::dashboard::DashboardService::new(
+        dashboard_repo,
+        label_repo.clone(),
+        plot_repo.clone(),
+        user_repo.clone(),
+    ));
 
     let feedback_status_service =
         Arc::new(FeedbackStatusService::new(feedback_status_repo.clone()));
@@ -368,6 +376,7 @@ async fn main() -> Result<()> {
         mark_type_service,
         prediction_service,
         plot_service,
+        dashboard_service,
         feedback_service,
         feedback_status_service,
         role_cache,

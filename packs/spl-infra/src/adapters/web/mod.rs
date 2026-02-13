@@ -1,4 +1,4 @@
-use crate::adapters::web::controllers::{auth, companies, diagnostics, feedback, plots, recommendation, user};
+use crate::adapters::web::controllers::{auth, companies, dashboard, diagnostics, feedback, plots, recommendation, user};
 use crate::adapters::web::state::AppState;
 use axum::http::HeaderValue;
 use axum::Router;
@@ -95,6 +95,7 @@ pub fn router(state: Arc<AppState>) -> Router {
     openapi.merge(auth::AuthApi::openapi());
     openapi.merge(user::UserApi::openapi());
     openapi.merge(companies::CompaniesApi::openapi());
+    openapi.merge(dashboard::DashboardApi::openapi());
     openapi.merge(recommendation::CategoryApi::openapi());
     openapi.merge(recommendation::RecommendationApi::openapi());
     openapi.merge(plots::PlotsApi::openapi());
@@ -102,7 +103,7 @@ pub fn router(state: Arc<AppState>) -> Router {
     openapi.merge(diagnostics::mark_types::MarkTypesApi::openapi());
     openapi.merge(diagnostics::prediction::PredictionApi::openapi());
     openapi.merge(feedback::status::FeedbackStatusApi::openapi());
-    openapi.merge(feedback::feedback::FeedbackApi::openapi());
+    openapi.merge(feedback::FeedbackApi::openapi());
 
     let addon = SecurityAddon {};
     addon.modify(&mut openapi);
@@ -115,6 +116,7 @@ pub fn router(state: Arc<AppState>) -> Router {
         .nest(base_path, auth::router())
         .nest(base_path, user::router(state.clone()))
         .nest(base_path, companies::router(state.clone()))
+        .nest(base_path, dashboard::router(state.clone()))
         .nest(base_path, recommendation::category::router(state.clone()))
         .nest(base_path, recommendation::router(state.clone()))
         .nest(base_path, diagnostics::labels::router(state.clone()))

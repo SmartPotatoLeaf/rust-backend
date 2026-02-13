@@ -1,6 +1,7 @@
 use spl_application::services::{
     auth::AuthService,
     company::CompanyService,
+    dashboard::DashboardService,
     diagnostics::{LabelService, MarkTypeService, PredictionService},
     image::ImageService,
     plot::PlotService,
@@ -13,9 +14,9 @@ use spl_domain::ports::integrations::{BlobStorageClient, ModelPredictionClient};
 use spl_shared::config::AppConfig;
 use std::sync::Arc;
 
-use std::collections::HashMap;
-use spl_application::services::feedback::{FeedbackService};
 use spl_application::services::feedback::status::FeedbackStatusService;
+use spl_application::services::feedback::FeedbackService;
+use std::collections::HashMap;
 
 pub struct AppState {
     pub config: Arc<AppConfig>,
@@ -30,12 +31,14 @@ pub struct AppState {
     pub mark_type_service: Arc<MarkTypeService>,
     pub prediction_service: Arc<PredictionService>,
     pub plot_service: Arc<PlotService>,
+    pub dashboard_service: Arc<DashboardService>,
     pub feedback_service: Arc<FeedbackService>,
     pub feedback_status_service: Arc<FeedbackStatusService>,
     pub roles: HashMap<String, i16>,
     // Integration clients
     pub model_client: Arc<dyn ModelPredictionClient>,
     pub storage_client: Arc<dyn BlobStorageClient>,
+    // Repositories (for direct access when needed)
 }
 
 impl AppState {
@@ -53,6 +56,7 @@ impl AppState {
         mark_type_service: Arc<MarkTypeService>,
         prediction_service: Arc<PredictionService>,
         plot_service: Arc<PlotService>,
+        dashboard_service: Arc<DashboardService>,
         feedback_service: Arc<FeedbackService>,
         feedback_status_service: Arc<FeedbackStatusService>,
         roles: HashMap<String, i16>,
@@ -72,6 +76,7 @@ impl AppState {
             mark_type_service,
             prediction_service,
             plot_service,
+            dashboard_service,
             feedback_service,
             feedback_status_service,
             roles,

@@ -5,6 +5,7 @@ pub mod image;
 pub mod plot;
 pub mod recommendation;
 pub mod user;
+pub mod dashboard;
 
 pub use company::DbCompanyRepository;
 pub use diagnostics::{DbLabelRepository, DbMarkTypeRepository, DbPredictionRepository};

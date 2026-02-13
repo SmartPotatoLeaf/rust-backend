@@ -1,6 +1,7 @@
 pub mod access_control;
 pub mod auth;
 pub mod company;
+pub mod dashboard;
 pub mod diagnostics;
 pub mod feedback;
 pub mod image;
