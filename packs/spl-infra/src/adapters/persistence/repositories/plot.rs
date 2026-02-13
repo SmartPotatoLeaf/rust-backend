@@ -1,7 +1,10 @@
 use crate::adapters::persistence::entities::user::user;
 use crate::adapters::persistence::entities::{diagnostics::label, diagnostics::prediction, plot};
 use chrono::{DateTime, Utc};
-use sea_orm::sea_query::{Expr, Func, IntoColumnRef, SelectStatement, UnionType};
+use sea_orm::prelude::DateTimeWithTimeZone;
+use sea_orm::sea_query::{
+    Expr, Func, IntoColumnRef, Query, SelectStatement, SimpleExpr, UnionType,
+};
 use sea_orm::JoinType;
 use sea_orm::*;
 use spl_domain::entities::plot::Plot;
@@ -15,16 +18,26 @@ pub struct DbPlotRepository {
 }
 
 // Auxiliary structure to receive raw data from the DB in a single query
-#[derive(Debug, FromQueryResult)]
-struct DetailedPlotQueryResult {
-    id: Option<Uuid>,
-    name: String,
-    description: Option<String>,
-    created_at: DateTime<Utc>,
+#[derive(Debug, Clone, FromQueryResult)]
+pub struct DetailedPlotQueryResult {
+    pub id: Option<Uuid>,
+    pub name: String,
+    pub description: Option<String>,
+    pub created_at: DateTime<Utc>,
     // Aggregations
-    total_diagnosis: Option<i64>, // Count returns i64 (or i32 depending on driver), we use Option for safety
-    last_diagnosis: Option<DateTime<Utc>>,
-    matching_diagnosis: Option<i64>, // Result of conditional SUM
+    pub total_diagnosis: Option<i64>, // Count returns i64 (or i32 depending on driver), we use Option for safety
+    pub last_diagnosis: Option<DateTime<Utc>>,
+    pub matching_diagnosis: Option<i64>, // Result of conditional SUM
+}
+
+#[derive(Debug, Clone, FromQueryResult)]
+pub struct PlotQueryResult {
+    pub id: Option<Uuid>,
+    pub company_id: Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub created_at: DateTimeWithTimeZone,
+    pub updated_at: DateTimeWithTimeZone,
 }
 
 impl DbPlotRepository {
@@ -40,18 +53,6 @@ impl DbPlotRepository {
         let total_diagnosis = query.count(&self.db).await.map_err(AppError::from)?;
 
         Ok(total_diagnosis as i64)
-    }
-
-    fn map_result(result: DetailedPlotQueryResult) -> DetailedPlot {
-        DetailedPlot {
-            id: result.id,
-            name: result.name,
-            description: result.description,
-            created_at: result.created_at,
-            total_diagnosis: result.total_diagnosis.unwrap_or(0),
-            last_diagnosis: result.last_diagnosis,
-            matching_diagnosis: result.matching_diagnosis.unwrap_or(0),
-        }
     }
 
     fn find_detailed<E>(select: Select<E>, labels: &Vec<String>) -> Select<E>
@@ -86,38 +87,40 @@ impl DbPlotRepository {
             )
     }
 
+    fn get_default_fields() -> Vec<(&'static str, SimpleExpr)> {
+        vec![
+            ("id", Expr::value(None::<Uuid>)), // Default plot has no ID
+            ("name", Expr::value("Default Plot")),
+            (
+                "description",
+                Expr::value("Default plot for unassigned predictions"),
+            ),
+            ("created_at", Expr::value(Utc::now())), // Use the current time for created_at of the default plot
+            ("updated_at", Expr::value(Utc::now())), // Use current time for updated_at of the default plot
+        ]
+    }
+
     fn find_default_detailed(
         company_id: Uuid,
         labels: &Vec<String>,
     ) -> (Select<prediction::Entity>, Select<prediction::Entity>) {
         // Base query for unassigned predictions for the company
-        let base_query = prediction::Entity::find()
+        let base_select = prediction::Entity::find()
             .join(JoinType::InnerJoin, prediction::Relation::User.def())
             .left_join(label::Entity)
             .filter(prediction::Column::PlotId.is_null())
             .filter(user::Column::CompanyId.eq(company_id));
 
-        let query = DbPlotRepository::find_detailed(
-            base_query
-                .clone()
-                .select_only()
-                .expr_as(
-                    Expr::value(None::<Uuid>), // Default plot has no ID
-                    "id",
-                )
-                .expr_as(Expr::value("Default Plot"), "name")
-                .expr_as(
-                    Expr::value("Default plot for unassigned predictions"),
-                    "description",
-                )
-                .expr_as(
-                    Expr::value(Utc::now()), // Use the current time for created_at of the default plot
-                    "created_at",
-                ),
-            &labels,
-        );
+        // Build the default select with aggregations, similar to the detailed plot query but for unassigned predictions
+        let mut default_select = base_select.clone().select_only();
+        for (name, field) in DbPlotRepository::get_default_fields() {
+            if name != "updated_at" {
+                default_select = default_select.expr_as(field, name);
+            }
+        }
 
-        (base_query, query)
+        let query = DbPlotRepository::find_detailed(default_select, &labels);
+        (base_select, query)
     }
 
     fn create_plot_detailed_query(
@@ -173,7 +176,7 @@ impl DbPlotRepository {
             .await
             .map_err(AppError::from)?
             .into_iter()
-            .map(DbPlotRepository::map_result)
+            .map(Into::into)
             .collect();
 
         Ok(results)
@@ -210,6 +213,69 @@ impl PlotRepository for DbPlotRepository {
             .map_err(AppError::from)?;
 
         Ok(models.into_iter().map(Into::into).collect())
+    }
+
+    async fn get_all_by_company_id(&self, company_id: Uuid) -> Result<Vec<Plot>> {
+        // Creates the query for create the default plot with a subquery to check
+        // if there are any unassigned predictions for the company
+        let exists_default_query = Query::select()
+            .expr(Expr::val(1))
+            .from(prediction::Entity)
+            .inner_join(
+                user::Entity,
+                Expr::col((user::Entity, user::Column::Id))
+                    .equals((prediction::Entity, prediction::Column::UserId)),
+            )
+            .and_where(user::Column::CompanyId.eq(company_id))
+            .and_where(prediction::Column::PlotId.is_null())
+            .to_owned();
+
+        let mut default_query = Query::select();
+
+        for (name, field) in Self::get_default_fields() {
+            default_query.expr_as(field, name);
+        }
+
+        let default_select = default_query
+            .expr_as(Expr::val(company_id), "company_id") // Add company_id to the default plot select
+            .and_where(Expr::exists(exists_default_query))
+            .to_owned();
+
+        // Filter to get all plots for the company
+        let plots_select = plot::Entity::find().filter(plot::Column::CompanyId.eq(company_id));
+
+        // Maps and sorts the plot query to select the necessary fields and combines
+        // it with the default plot query using UNION ALL
+        let mut query = SelectStatement::new();
+        let query = query
+            .from_subquery(
+                plots_select
+                    .clone()
+                    .order_by_desc(plot::Column::CreatedAt)
+                    .into_query(),
+                "plots",
+            )
+            .columns(vec![
+                "id".into_column_ref(),
+                "name".into_column_ref(),
+                "description".into_column_ref(),
+                "created_at".into_column_ref(),
+                "updated_at".into_column_ref(),
+                "company_id".into_column_ref(),
+            ]);
+
+        // Combines the plots query with the default plot query using UNION ALL to ensure the default plot is included if there are unassigned predictions
+        let union = query.union(UnionType::All, default_select);
+        let backend = self.db.get_database_backend();
+        let stmt = backend.build(union);
+
+        let plots = plot::Model::find_by_statement(stmt)
+            .into_model::<PlotQueryResult>()
+            .all(&self.db)
+            .await
+            .map_err(AppError::from)?;
+
+        Ok(plots.into_iter().map(Into::into).collect())
     }
 
     async fn get_by_company_id_and_id(&self, company_id: Uuid, id: Uuid) -> Result<Option<Plot>> {
@@ -294,7 +360,7 @@ impl PlotRepository for DbPlotRepository {
             .await
             .map_err(AppError::from)?;
 
-        Ok(first.map(DbPlotRepository::map_result))
+        Ok(first.map(Into::into))
     }
 
     async fn get_default_detailed(
@@ -317,6 +383,6 @@ impl PlotRepository for DbPlotRepository {
             .await
             .map_err(AppError::from)?;
 
-        Ok(default.map(DbPlotRepository::map_result))
+        Ok(default.map(Into::into))
     }
 }

@@ -21,6 +21,9 @@ pub trait PlotRepository: CrudRepository<Plot, Uuid> {
     /// Get all plots for a specific company
     async fn get_by_company_id(&self, company_id: Uuid) -> Result<Vec<Plot>>;
 
+    // Get all plots for a specific company, including the default plot (unassigned predictions) with id = None
+    async fn get_all_by_company_id(&self, company_id: Uuid) -> Result<Vec<Plot>>;
+
     /// Get a plot by ID only if it belongs to the company
     async fn get_by_company_id_and_id(&self, company_id: Uuid, id: Uuid) -> Result<Option<Plot>>;
 
