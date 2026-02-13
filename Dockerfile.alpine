@@ -1,0 +1,60 @@
+# Alternative Dockerfile using Alpine and musl for fully static binary
+# Results in the smallest possible image (~10-15 MB final image)
+
+# Stage 1: Chef - Compute the recipe
+FROM rustlang/rust:nightly-alpine AS chef
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache \
+    musl-dev \
+    pkgconfig \
+    openssl-dev \
+    openssl-libs-static \
+    libc-dev
+
+# Install cargo-chef
+RUN cargo install cargo-chef --locked
+
+# Stage 2: Planner
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+# Stage 3: Builder
+FROM chef AS builder
+
+# Set target for fully static binary (LTO configured in Cargo.toml)
+ENV RUSTFLAGS="-C target-feature=+crt-static -C link-arg=-static"
+
+# Copy recipe and build dependencies
+COPY --from=planner /app/recipe.json recipe.json
+RUN cargo chef cook --release --target x86_64-unknown-linux-musl --recipe-path recipe.json
+
+# Copy source and build
+COPY . .
+RUN cargo build --release --target x86_64-unknown-linux-musl --bin spl-server
+
+# Stage 4: Runtime - Scratch image (absolute minimum)
+FROM scratch
+
+# Copy CA certificates for HTTPS
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+# Copy the static binary
+COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/spl-server /spl-server
+
+# Copy config
+COPY --from=builder /app/config /app/config
+
+# Set working directory metadata
+WORKDIR /app
+
+# Expose port (documentation)
+EXPOSE 8080
+
+# Run as non-root (UID 1000)
+USER 1000:1000
+
+# Entrypoint
+ENTRYPOINT ["/spl-server"]

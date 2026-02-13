@@ -1,0 +1,8 @@
+target/
+*.md
+docs/
+tests/
+.vscode/
+*.log
+legacy/
+.*/*
