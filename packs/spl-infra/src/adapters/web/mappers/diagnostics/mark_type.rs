@@ -3,41 +3,35 @@ use crate::adapters::web::models::diagnostics::{
 };
 use spl_application::dtos::diagnostics::{CreateMarkTypeDto, UpdateMarkTypeDto};
 use spl_domain::entities::diagnostics::MarkType;
+use spl_shared::{map_mirror, maps_to};
 
-impl From<CreateMarkTypeRequest> for CreateMarkTypeDto {
-    fn from(req: CreateMarkTypeRequest) -> Self {
-        Self {
-            name: req.name,
-            description: req.description,
-        }
+map_mirror!(
+    CreateMarkTypeRequest,
+    CreateMarkTypeDto {
+        name,
+        description,
     }
-}
+);
 
-impl From<UpdateMarkTypeRequest> for UpdateMarkTypeDto {
-    fn from(req: UpdateMarkTypeRequest) -> Self {
-        Self {
-            name: req.name,
-            description: req.description,
-        }
+map_mirror!(
+    UpdateMarkTypeRequest,
+    UpdateMarkTypeDto {
+        name,
+        description,
     }
-}
+);
 
-impl From<MarkType> for MarkTypeResponse {
-    fn from(mark_type: MarkType) -> Self {
-        Self {
-            id: mark_type.id,
-            name: mark_type.name,
-            description: mark_type.description,
-            created_at: mark_type.created_at,
-        }
+map_mirror!(
+    MarkType,
+    MarkTypeResponse {
+        id,
+        name,
+        description,
+        created_at,
     }
-}
+);
 
-impl From<MarkType> for SimplifiedMarkTypeResponse {
-    fn from(mark_type: MarkType) -> Self {
-        Self {
-            id: mark_type.id,
-            name: mark_type.name,
-        }
-    }
-}
+maps_to!(SimplifiedMarkTypeResponse {
+    id,
+    name,
+} #from [ MarkType ]);

@@ -76,7 +76,7 @@ impl UserService {
 
         if creator_role.level >= 100 {
             // Admin Logic
-            let target_role_name = dto.role_name.as_ref().ok_or_else(|| {
+            let target_role_name = dto.role.as_ref().ok_or_else(|| {
                 AppError::ValidationError("Role name required for Admin creation".to_string())
             })?;
 
@@ -101,7 +101,7 @@ impl UserService {
             // Supervisor Logic
             // Can only create users (level < 50)
 
-            let target_role = if let Some(r_name) = &dto.role_name {
+            let target_role = if let Some(r_name) = &dto.role {
                 self.role_repo.get_by_name(r_name).await?.ok_or_else(|| {
                     AppError::ValidationError("Invalid target role name".to_string())
                 })?
@@ -185,7 +185,7 @@ impl UserService {
         let requester_level = requester.role.level;
 
         // Determine new role if role_name is provided
-        let new_role = if let Some(ref role_name) = dto.role_name {
+        let new_role = if let Some(ref role_name) = dto.role {
             let role = self
                 .role_repo
                 .get_by_name(role_name)

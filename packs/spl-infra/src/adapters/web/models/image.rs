@@ -6,7 +6,9 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ImageResponse {
     pub id: Uuid,
+    pub user_id: Uuid,
     pub filename: String,
     pub filepath: String,
+    pub prediction_id: Option<Uuid>,
     pub created_at: DateTime<Utc>,
 }

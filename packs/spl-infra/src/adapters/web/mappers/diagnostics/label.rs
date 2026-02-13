@@ -3,51 +3,45 @@ use crate::adapters::web::models::diagnostics::{
 };
 use spl_application::dtos::diagnostics::{CreateLabelDto, UpdateLabelDto};
 use spl_domain::entities::diagnostics::Label;
+use spl_shared::{map_mirror, maps_to};
 
-impl From<CreateLabelRequest> for CreateLabelDto {
-    fn from(req: CreateLabelRequest) -> Self {
-        Self {
-            name: req.name,
-            description: req.description,
-            min: req.min,
-            max: req.max,
-            weight: req.weight,
-        }
+map_mirror!(
+    CreateLabelRequest,
+    CreateLabelDto {
+        name,
+        description,
+        min,
+        max,
+        weight,
     }
-}
+);
 
-impl From<UpdateLabelRequest> for UpdateLabelDto {
-    fn from(req: UpdateLabelRequest) -> Self {
-        Self {
-            name: req.name,
-            description: req.description,
-            min: req.min,
-            max: req.max,
-            weight: req.weight,
-        }
+map_mirror!(
+    UpdateLabelRequest,
+    UpdateLabelDto {
+        name,
+        description,
+        min,
+        max,
+        weight,
     }
-}
+);
 
-impl From<Label> for LabelResponse {
-    fn from(label: Label) -> Self {
-        Self {
-            id: label.id,
-            name: label.name,
-            description: label.description,
-            min: label.min,
-            max: label.max,
-            weight: label.weight,
-            created_at: label.created_at,
-            updated_at: label.updated_at,
-        }
+map_mirror!(
+    Label,
+    LabelResponse {
+        id,
+        name,
+        description,
+        min,
+        max,
+        weight,
+        created_at,
+        updated_at,
     }
-}
+);
 
-impl From<Label> for SimplifiedLabelResponse {
-    fn from(label: Label) -> Self {
-        Self {
-            id: label.id,
-            name: label.name,
-        }
-    }
-}
+maps_to!(SimplifiedLabelResponse {
+    id,
+    name,
+} #from [ Label ]);

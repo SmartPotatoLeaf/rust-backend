@@ -214,7 +214,7 @@ async fn test_create_user_admin_creates_admin_success() {
         email: "new@example.com".to_string(),
         password: "pass".to_string(),
         company_id: None,
-        role_name: Some("admin".to_string()),
+        role: Some("admin".to_string()),
     };
 
     let result = service.create_user(&admin_user, dto).await;
@@ -342,7 +342,7 @@ async fn test_create_user_supervisor_creates_user_success() {
         email: "user@example.com".to_string(),
         password: "pass".to_string(),
         company_id: None,
-        role_name: Some("user".to_string()),
+        role: Some("user".to_string()),
     };
 
     let result = service.create_user(&supervisor, dto).await;

@@ -3,25 +3,18 @@ use crate::adapters::web::models::feedback::feedback::{
 };
 use spl_application::dtos::feedback::feedback::{CreateFeedbackDto, UpdateFeedbackDto};
 use spl_domain::entities::feedback::Feedback;
+use spl_shared::map_mirror;
 
-impl From<CreateFeedbackRequest> for CreateFeedbackDto {
-    fn from(req: CreateFeedbackRequest) -> Self {
-        Self {
-            comment: req.comment,
-            correct_label_id: req.correct_label_id,
-            prediction_id: req.prediction_id,
-        }
-    }
-}
+map_mirror!(CreateFeedbackRequest, CreateFeedbackDto {
+    comment,
+    correct_label_id,
+    prediction_id,
+});
 
-impl From<UpdateFeedbackRequest> for UpdateFeedbackDto {
-    fn from(req: UpdateFeedbackRequest) -> Self {
-        Self {
-            comment: req.comment,
-            correct_label_id: req.correct_label_id,
-        }
-    }
-}
+map_mirror!(UpdateFeedbackRequest, UpdateFeedbackDto {
+    comment,
+    correct_label_id,
+});
 
 impl From<Feedback> for FeedbackResponse {
     fn from(feedback: Feedback) -> Self {

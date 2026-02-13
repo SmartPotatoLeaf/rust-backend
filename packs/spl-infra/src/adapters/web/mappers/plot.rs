@@ -10,6 +10,7 @@ use spl_domain::ports::repositories::plot::DetailedPlot;
 use spl_shared::error::{AppError, Result};
 use spl_shared::traits::IntoWithContext;
 use uuid::Uuid;
+use spl_shared::{map_mirror, maps_to};
 
 /// Context for creating a plot with user context
 pub struct CreatePlotContext {
@@ -21,79 +22,39 @@ impl IntoWithContext<CreatePlotDto, CreatePlotContext> for CreatePlotRequest {
 
     fn into_with_context(self, context: CreatePlotContext) -> Result<CreatePlotDto> {
         Ok(CreatePlotDto {
-            company_id: if self.company_id.is_some() {
-                self.company_id
-            } else {
-                context.company_id
-            },
+            company_id: self.company_id.or(context.company_id),
             name: self.name,
             description: self.description,
         })
     }
 }
 
-impl From<UpdatePlotRequest> for UpdatePlotDto {
-    fn from(req: UpdatePlotRequest) -> Self {
-        Self {
-            name: req.name,
-            description: req.description,
-        }
-    }
-}
+map_mirror!(UpdatePlotRequest, UpdatePlotDto { name, description });
 
-impl From<AssignPredictionsRequest> for AssignPlotDto {
-    fn from(req: AssignPredictionsRequest) -> Self {
-        Self {
-            prediction_ids: req.prediction_ids,
-        }
-    }
-}
+map_mirror!(AssignPredictionsRequest, AssignPlotDto { prediction_ids });
 
-impl From<DetailedPlotsRequest> for DetailedPlotDto {
-    fn from(req: DetailedPlotsRequest) -> Self {
-        Self {
-            page: req.page,
-            limit: req.limit,
-            labels: req.labels,
-        }
-    }
-}
+map_mirror!(DetailedPlotsRequest, DetailedPlotDto { page, limit, labels });
 
-impl From<Plot> for PlotResponse {
-    fn from(plot: Plot) -> Self {
-        Self {
-            id: plot.id,
-            company_id: plot.company_id,
-            name: plot.name,
-            description: plot.description,
-            created_at: plot.created_at,
-            updated_at: plot.updated_at,
-        }
-    }
-}
+map_mirror!(Plot, PlotResponse {
+    id,
+    company_id,
+    name,
+    description,
+    created_at,
+    updated_at
+});
 
-impl From<Plot> for SimplifiedPlotResponse {
-    fn from(plot: Plot) -> Self {
-        Self {
-            id: plot.id,
-            name: plot.name,
-        }
-    }
-}
+maps_to!(SimplifiedPlotResponse { id, name } #from [ Plot ]);
 
-impl From<DetailedPlot> for DetailedPlotResponse {
-    fn from(detailed: DetailedPlot) -> Self {
-        Self {
-            id: detailed.id,
-            name: detailed.name,
-            description: detailed.description,
-            created_at: detailed.created_at,
-            total_diagnosis: detailed.total_diagnosis,
-            last_diagnosis: detailed.last_diagnosis,
-            matching_diagnosis: detailed.matching_diagnosis,
-        }
-    }
-}
+map_mirror!(DetailedPlot, DetailedPlotResponse {
+    id,
+    name,
+    description,
+    created_at,
+    total_diagnosis,
+    last_diagnosis,
+    matching_diagnosis
+});
 
 impl From<PaginatedDetailedPlot> for DetailedPlotsResponse {
     fn from(paginated: PaginatedDetailedPlot) -> Self {

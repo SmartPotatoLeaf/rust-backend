@@ -5,49 +5,39 @@ use crate::adapters::web::models::recommendation::{
 
 use spl_application::dtos::recommendation::{CreateRecommendationDto, UpdateRecommendationDto};
 use spl_domain::entities::recommendation::Recommendation;
+use spl_shared::{map_mirror, maps_to};
 
-impl From<CreateRecommendationRequest> for CreateRecommendationDto {
-    fn from(req: CreateRecommendationRequest) -> Self {
-        Self {
-            description: req.description,
-            category_id: req.category_id,
-            min_severity: req.min_severity,
-            max_severity: req.max_severity,
-        }
+map_mirror!(
+    CreateRecommendationRequest,
+    CreateRecommendationDto {
+        description,
+        category_id,
+        min_severity,
+        max_severity,
     }
-}
+);
 
-impl From<UpdateRecommendationRequest> for UpdateRecommendationDto {
-    fn from(req: UpdateRecommendationRequest) -> Self {
-        Self {
-            description: req.description,
-            category_id: req.category_id,
-            min_severity: req.min_severity,
-            max_severity: req.max_severity,
-        }
+map_mirror!(
+    UpdateRecommendationRequest,
+    UpdateRecommendationDto {
+        description,
+        category_id,
+        min_severity,
+        max_severity,
     }
-}
+);
 
-impl From<Recommendation> for RecommendationResponse {
-    fn from(entity: Recommendation) -> Self {
-        Self {
-            id: entity.id,
-            description: entity.description,
-            category: entity.category.into(),
-            min_severity: entity.min_severity,
-            max_severity: entity.max_severity,
-            created_at: entity.created_at,
-            updated_at: entity.updated_at,
-        }
-    }
-}
+map_mirror!(Recommendation, RecommendationResponse {
+    id,
+    description,
+    min_severity,
+    max_severity,
+    created_at,
+    updated_at,
+    #into [ category ]
+});
 
-impl From<Recommendation> for SimplifiedRecommendationResponse {
-    fn from(entity: Recommendation) -> Self {
-        Self {
-            id: entity.id,
-            description: entity.description,
-            category: entity.category.into(),
-        }
-    }
-}
+maps_to!(SimplifiedRecommendationResponse {
+    id, description,
+    #into [ category ]
+} #from [ Recommendation ]);

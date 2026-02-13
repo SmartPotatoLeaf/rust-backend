@@ -6,42 +6,27 @@ use crate::adapters::web::models::recommendation::{
 use spl_application::dtos::recommendation::category::{CreateCategoryDto, UpdateCategoryDto};
 
 use spl_domain::entities::recommendation::Category;
+use spl_shared::{map_mirror, maps_to};
 
-impl From<CreateRecommendationCategoryRequest> for CreateCategoryDto {
-    fn from(req: CreateRecommendationCategoryRequest) -> Self {
-        Self {
-            name: req.name,
-            description: req.description,
-        }
-    }
-}
+map_mirror!(CreateRecommendationCategoryRequest, CreateCategoryDto {
+    name,
+    description,
+});
 
-impl From<UpdateRecommendationCategoryRequest> for UpdateCategoryDto {
-    fn from(req: UpdateRecommendationCategoryRequest) -> Self {
-        Self {
-            name: req.name,
-            description: req.description,
-        }
-    }
-}
+map_mirror!(UpdateRecommendationCategoryRequest, UpdateCategoryDto {
+    name,
+    description,
+});
 
-impl From<Category> for RecommendationCategoryResponse {
-    fn from(entity: Category) -> Self {
-        Self {
-            id: entity.id,
-            name: entity.name,
-            description: entity.description,
-            created_at: entity.created_at,
-            updated_at: entity.updated_at,
-        }
-    }
-}
+map_mirror!(Category, RecommendationCategoryResponse {
+    id,
+    name,
+    description,
+    created_at,
+    updated_at,
+});
 
-impl From<Category> for SimplifiedRecommendationCategoryResponse {
-    fn from(entity: Category) -> Self {
-        Self {
-            id: entity.id,
-            name: entity.name,
-        }
-    }
-}
+maps_to!(SimplifiedRecommendationCategoryResponse {
+    id,
+    name,
+} #from [ Category ]);

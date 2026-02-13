@@ -6,7 +6,7 @@ use validator::Validate;
 
 use super::company::CompanyResponse;
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct UserResponse {
     pub id: Uuid,
     pub username: String,
@@ -16,7 +16,14 @@ pub struct UserResponse {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct SimplifiedUserResponse {
+    pub id: Uuid,
+    pub username: String,
+    pub role: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct FullUserResponse {
     pub id: Uuid,
     pub username: String,
@@ -37,4 +44,3 @@ pub struct UpdateUserRequest {
     pub role: Option<String>,
     pub company_id: Option<Uuid>,
 }
-

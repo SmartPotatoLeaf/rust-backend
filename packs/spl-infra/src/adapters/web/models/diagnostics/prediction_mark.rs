@@ -9,5 +9,6 @@ pub struct PredictionMarkResponse {
     pub id: Uuid,
     pub data: serde_json::Value,
     pub mark_type: SimplifiedMarkTypeResponse,
+    pub prediction_id: Uuid,
     pub created_at: DateTime<Utc>,
 }

@@ -7,7 +7,7 @@ pub struct CreateUserDto {
     pub email: String,
     pub password: String,
     pub company_id: Option<Uuid>,
-    pub role_name: Option<String>,
+    pub role: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -15,7 +15,7 @@ pub struct UpdateUserDto {
     pub username: Option<String>,
     pub email: Option<String>,
     pub password: Option<String>,
-    pub role_name: Option<String>,
+    pub role: Option<String>,
     pub company_id: Option<Uuid>,
 }
 

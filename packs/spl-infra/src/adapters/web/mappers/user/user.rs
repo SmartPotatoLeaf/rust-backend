@@ -1,41 +1,50 @@
+use crate::adapters::web::models::user::SimplifiedUserResponse;
 use crate::adapters::web::models::{
     auth::{LoginRequest, RegisterRequest},
     user::{FullUserResponse, UpdateUserRequest, UserResponse},
 };
 use spl_application::dtos::user::{CreateUserDto, LoginDto, UpdateUserDto};
 use spl_domain::entities::user::User;
+use spl_shared::map_mirror;
 
-impl From<LoginRequest> for LoginDto {
-    fn from(req: LoginRequest) -> Self {
-        Self {
-            username: req.username,
-            email: req.email,
-            password: req.password,
-            company_id: req.company_id,
-        }
+map_mirror!(
+    LoginRequest,
+    LoginDto {
+        username,
+        email,
+        password,
+        company_id,
     }
-}
+);
 
-impl From<RegisterRequest> for CreateUserDto {
-    fn from(req: RegisterRequest) -> Self {
-        Self {
-            username: req.username,
-            email: req.email,
-            password: req.password,
-            company_id: req.company_id,
-            role_name: req.role,
-        }
+map_mirror!(
+    RegisterRequest,
+    CreateUserDto {
+        username,
+        email,
+        password,
+        company_id,
+        role,
     }
-}
+);
 
-impl From<UpdateUserRequest> for UpdateUserDto {
-    fn from(req: UpdateUserRequest) -> Self {
+map_mirror!(
+    UpdateUserRequest,
+    UpdateUserDto {
+        username,
+        email,
+        password,
+        role,
+        company_id,
+    }
+);
+
+impl From<User> for SimplifiedUserResponse {
+    fn from(value: User) -> Self {
         Self {
-            username: req.username,
-            email: req.email,
-            password: req.password,
-            role_name: req.role,
-            company_id: req.company_id,
+            id: value.id,
+            username: value.username,
+            role: value.role.name,
         }
     }
 }
