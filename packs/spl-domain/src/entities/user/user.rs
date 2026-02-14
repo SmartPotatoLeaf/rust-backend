@@ -8,7 +8,7 @@ use uuid::Uuid;
 pub struct User {
     pub id: Uuid,
     pub username: String,
-    pub email: String,
+    pub email: Option<String>,
     pub password_hash: String,
     pub name: Option<String>,
     pub surname: Option<String>,

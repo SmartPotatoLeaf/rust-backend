@@ -85,7 +85,7 @@ async fn test_create_user_admin_creates_admin_success() {
     let admin_user = User {
         id: Uuid::new_v4(),
         username: "admin".to_string(),
-        email: "admin@example.com".to_string(),
+        email: Some("admin@example.com".to_string()),
         password_hash: "hash".to_string(),
         name: None,
         surname: None,
@@ -104,7 +104,7 @@ async fn test_create_user_admin_creates_admin_success() {
     let new_admin = User {
         id: Uuid::new_v4(),
         username: "newadmin".to_string(),
-        email: "new@example.com".to_string(),
+        email: Some("new@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,
@@ -135,7 +135,7 @@ async fn test_create_user_admin_creates_admin_success() {
     let supervisor = User {
         id: Uuid::new_v4(),
         username: "supervisor".to_string(),
-        email: "sup@example.com".to_string(),
+        email: Some("sup@example.com".to_string()),
         password_hash: "hash".to_string(),
         name: None,
         surname: None,
@@ -154,7 +154,7 @@ async fn test_create_user_admin_creates_admin_success() {
     let new_user = User {
         id: Uuid::new_v4(),
         username: "user".to_string(),
-        email: "user@example.com".to_string(),
+        email: Some("user@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,
@@ -219,7 +219,7 @@ async fn test_create_user_admin_creates_admin_success() {
 
     let dto = CreateUserDto {
         username: "newadmin".to_string(),
-        email: "new@example.com".to_string(),
+        email: Some("new@example.com".to_string()),
         password: "pass".to_string(),
         name: None,
         surname: None,
@@ -251,7 +251,7 @@ async fn test_create_user_supervisor_creates_user_success() {
     let supervisor = User {
         id: Uuid::new_v4(),
         username: "supervisor".to_string(),
-        email: "sup@example.com".to_string(),
+        email: Some("sup@example.com".to_string()),
         password_hash: "hash".to_string(),
         name: None,
         surname: None,
@@ -270,7 +270,7 @@ async fn test_create_user_supervisor_creates_user_success() {
     let new_user = User {
         id: Uuid::new_v4(),
         username: "user".to_string(),
-        email: "user@example.com".to_string(),
+        email: Some("user@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,
@@ -353,7 +353,7 @@ async fn test_create_user_supervisor_creates_user_success() {
 
     let dto = CreateUserDto {
         username: "user".to_string(),
-        email: "user@example.com".to_string(),
+        email: Some("user@example.com".to_string()),
         password: "pass".to_string(),
         name: None,
         surname: None,

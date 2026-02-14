@@ -20,7 +20,7 @@ async fn test_get_all_categories_success() {
     let user = User {
         id: user_id,
         username: "testuser".to_string(),
-        email: "test@example.com".to_string(),
+        email: Some("test@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,
@@ -104,7 +104,7 @@ async fn test_get_all_recommendations_success() {
     let user = User {
         id: user_id,
         username: "testuser".to_string(),
-        email: "test@example.com".to_string(),
+        email: Some("test@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,
@@ -200,7 +200,7 @@ async fn test_update_category_success() {
     let user = User {
         id: user_id,
         username: "adminuser".to_string(),
-        email: "admin@example.com".to_string(),
+        email: Some("admin@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,
@@ -303,7 +303,7 @@ async fn test_delete_category_success() {
     let user = User {
         id: user_id,
         username: "adminuser".to_string(),
-        email: "admin@example.com".to_string(),
+        email: Some("admin@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,

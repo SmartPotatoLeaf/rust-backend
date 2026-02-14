@@ -28,7 +28,7 @@ async fn test_register_endpoint_success() {
     let creator_user = User {
         id: creator_id,
         username: "admin".to_string(),
-        email: "admin@example.com".to_string(),
+        email: Some("admin@example.com".to_string()),
         password_hash: "hash".to_string(),
         name: None,
         surname: None,
@@ -47,7 +47,7 @@ async fn test_register_endpoint_success() {
     let new_user = User {
         id: new_user_id,
         username: "newuser".to_string(),
-        email: "new@example.com".to_string(),
+        email: Some("new@example.com".to_string()),
         password_hash: "hashed_new".to_string(),
         name: None,
         surname: None,

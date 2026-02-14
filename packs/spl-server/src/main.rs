@@ -121,7 +121,7 @@ async fn main() -> Result<()> {
                                 let new_admin = User {
                                     id: Uuid::new_v4(),
                                     username: admin_config.username.clone(),
-                                    email: admin_config.email.clone(),
+                                    email: Some(admin_config.email.clone()),
                                     password_hash: hash,
                                     name: None,
                                     surname: None,

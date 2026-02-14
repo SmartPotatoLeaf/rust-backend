@@ -19,7 +19,7 @@ async fn test_login_endpoint_success() {
     let user = User {
         id: Uuid::new_v4(),
         username: "webuser".to_string(),
-        email: "web@example.com".to_string(),
+        email: Some("web@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,
@@ -101,7 +101,7 @@ async fn test_login_endpoint_with_email_success() {
     let user = User {
         id: Uuid::new_v4(),
         username: "webuser".to_string(),
-        email: "web@example.com".to_string(),
+        email: Some("web@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,

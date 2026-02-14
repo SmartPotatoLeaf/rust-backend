@@ -32,7 +32,7 @@ async fn test_get_company_success() {
     let user = User {
         id: user_id,
         username: "testuser".to_string(),
-        email: "test@example.com".to_string(),
+        email: Some("test@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,
@@ -102,7 +102,7 @@ async fn test_create_company_admin_only_success() {
     let admin_user = User {
         id: user_id,
         username: "adminuser".to_string(),
-        email: "admin@example.com".to_string(),
+        email: Some("admin@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,
@@ -178,7 +178,7 @@ async fn test_update_company_success() {
     let admin_user = User {
         id: user_id,
         username: "adminuser".to_string(),
-        email: "admin@example.com".to_string(),
+        email: Some("admin@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,
@@ -272,7 +272,7 @@ async fn test_delete_company_success() {
     let admin_user = User {
         id: user_id,
         username: "adminuser".to_string(),
-        email: "admin@example.com".to_string(),
+        email: Some("admin@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,

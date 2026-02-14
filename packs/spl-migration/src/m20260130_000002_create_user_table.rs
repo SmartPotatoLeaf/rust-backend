@@ -20,8 +20,8 @@ impl MigrationTrait for Migration {
                     .col(
                         ColumnDef::new(Users::Email)
                             .string()
-                            .not_null()
-                            .unique_key(),
+                            .unique_key()
+                            .null(),
                     )
                     .col(ColumnDef::new(Users::PasswordHash).string().not_null())
                     .col(

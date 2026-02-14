@@ -20,7 +20,7 @@ async fn test_me_endpoint_success() {
     let user = User {
         id: user_id,
         username: "meuser".to_string(),
-        email: "me@example.com".to_string(),
+        email: Some("me@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,

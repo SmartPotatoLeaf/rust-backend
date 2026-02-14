@@ -4,7 +4,7 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateUserDto {
     pub username: String,
-    pub email: String,
+    pub email: Option<String>,
     pub password: String,
     pub name: Option<String>,
     pub surname: Option<String>,

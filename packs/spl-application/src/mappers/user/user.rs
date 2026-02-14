@@ -47,7 +47,7 @@ impl IntoWithContext<User, UserUpdateContext> for UpdateUserDto {
         Ok(User {
             id: current.id,
             username: self.username.unwrap_or(current.username),
-            email: self.email.unwrap_or(current.email),
+            email: self.email.or(current.email),
             password_hash: context.password_hash.unwrap_or(current.password_hash),
             name: self.name.or(current.name),
             surname: self.surname.or(current.surname),

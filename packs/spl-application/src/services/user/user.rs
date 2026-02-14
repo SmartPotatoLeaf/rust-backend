@@ -127,11 +127,10 @@ impl UserService {
             .user_repo
             .get_by_username_and_company(&dto.username, target_company_id)
             .await?;
+
         if exists.is_some() {
             return Err(AppError::UserAlreadyExists);
         }
-
-        let password_hash = self.password_encoder.hash(&dto.password)?;
 
         // get target role
         let target_role = self
@@ -139,6 +138,14 @@ impl UserService {
             .get_by_id(target_role_id)
             .await?
             .ok_or_else(|| AppError::ValidationError("Role lost".to_string()))?;
+
+        if target_role.level >= 50 && dto.email.is_none() {
+            return Err(AppError::ValidationError(
+                "Email is required for Supervisor and Admin roles".to_string(),
+            ));
+        }
+
+        let password_hash = self.password_encoder.hash(&dto.password)?;
 
         // get target company if needed
         let target_company = if let Some(cid) = target_company_id {
@@ -202,6 +209,14 @@ impl UserService {
         } else {
             None
         };
+
+        let role = new_role.clone().unwrap_or(target_user.role.clone());
+
+        if role.level >= 50 && dto.email.is_none() && target_user.email.is_none() {
+            return Err(AppError::ValidationError(
+                "Email is required for Supervisor and Admin roles".to_string(),
+            ));
+        }
 
         // Determine new company if company_id is provided
         let new_company = if let Some(cid) = dto.company_id {

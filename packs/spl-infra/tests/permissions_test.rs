@@ -38,7 +38,7 @@ async fn test_rbac_admin_access_user_route() {
     let user = User {
         id: user_id,
         username: "test_admin".to_string(),
-        email: "admin@example.com".to_string(),
+        email: Some("admin@example.com".to_string()),
         password_hash: "hashed_secret".to_string(),
         name: None,
         surname: None,

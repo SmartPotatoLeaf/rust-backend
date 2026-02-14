@@ -32,7 +32,7 @@ async fn test_get_plots_success() {
     let user = User {
         id: user_id,
         username: "testuser".to_string(),
-        email: "test@example.com".to_string(),
+        email: Some("test@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,
@@ -130,7 +130,7 @@ async fn test_get_plot_by_id_success() {
     let user = User {
         id: user_id,
         username: "testuser".to_string(),
-        email: "test@example.com".to_string(),
+        email: Some("test@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,
@@ -227,7 +227,7 @@ async fn test_create_plot_success() {
     let user = User {
         id: user_id,
         username: "supervisor".to_string(),
-        email: "supervisor@example.com".to_string(),
+        email: Some("supervisor@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,
@@ -332,7 +332,7 @@ async fn test_create_plot_forbidden() {
     let user = User {
         id: user_id,
         username: "user".to_string(),
-        email: "user@example.com".to_string(),
+        email: Some("user@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,
@@ -421,7 +421,7 @@ async fn test_update_plot_success() {
     let user = User {
         id: user_id,
         username: "testuser".to_string(),
-        email: "test@example.com".to_string(),
+        email: Some("test@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,
@@ -533,7 +533,7 @@ async fn test_delete_plot_success() {
     let user = User {
         id: user_id,
         username: "testuser".to_string(),
-        email: "test@example.com".to_string(),
+        email: Some("test@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,
@@ -641,7 +641,7 @@ async fn test_detailed_plots_with_label_filtering() {
     let user = User {
         id: user_id,
         username: "testuser".to_string(),
-        email: "test@example.com".to_string(),
+        email: Some("test@example.com".to_string()),
         password_hash: "hashed".to_string(),
         name: None,
         surname: None,

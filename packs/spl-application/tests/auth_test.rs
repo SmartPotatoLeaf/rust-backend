@@ -75,7 +75,7 @@ async fn test_login_success() {
     let user = User {
         id: user_id,
         username: "testuser".to_string(),
-        email: "test@example.com".to_string(),
+        email: Some("test@example.com".to_string()),
         password_hash: "hashed_secret".to_string(),
         name: None,
         surname: None,

@@ -10,7 +10,7 @@ use super::company::CompanyResponse;
 pub struct UserResponse {
     pub id: Uuid,
     pub username: String,
-    pub email: String,
+    pub email: Option<String>,
     pub name: Option<String>,
     pub surname: Option<String>,
     pub role: String,
@@ -31,7 +31,7 @@ pub struct SimplifiedUserResponse {
 pub struct FullUserResponse {
     pub id: Uuid,
     pub username: String,
-    pub email: String,
+    pub email: Option<String>,
     pub name: Option<String>,
     pub surname: Option<String>,
     pub role: String,
