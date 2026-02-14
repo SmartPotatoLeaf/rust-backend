@@ -47,7 +47,7 @@ enum PredictionOrSimplifiedResponse {
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(create, get_all_by_user_id, filter, get_by_id, delete_prediction, read_blob),
+    paths(create, get_all_by_user_id, filter, get_by_id, delete_prediction, read_blob, predict),
     components(schemas(
         CreatePredictionRequest,
         PredictionResponse,

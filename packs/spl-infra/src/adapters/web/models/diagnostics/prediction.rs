@@ -74,7 +74,7 @@ pub struct PredictionsListResponse {
 
 #[derive(ToSchema)]
 pub struct CreatePredictionRequest {
-    #[schema(format = "binary")]
+    #[schema(value_type = String, format = Binary)]
     pub file: Vec<u8>,
 }
 
