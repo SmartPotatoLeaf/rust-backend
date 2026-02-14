@@ -23,6 +23,8 @@ map_mirror!(
         username,
         email,
         password,
+        name,
+        surname,
         company_id,
         role,
     }
@@ -34,6 +36,8 @@ map_mirror!(
         username,
         email,
         password,
+        name,
+        surname,
         role,
         company_id,
     }
@@ -44,6 +48,8 @@ impl From<User> for SimplifiedUserResponse {
         Self {
             id: value.id,
             username: value.username,
+            name: value.name,
+            surname: value.surname,
             role: value.role.name,
         }
     }
@@ -55,6 +61,8 @@ impl From<User> for UserResponse {
             id: user.id,
             username: user.username,
             email: user.email,
+            name: user.name,
+            surname: user.surname,
             role: user.role.name,
             company_id: user.company.map(|c| c.id),
             created_at: user.created_at,
@@ -68,6 +76,8 @@ impl From<User> for FullUserResponse {
             id: user.id,
             username: user.username,
             email: user.email,
+            name: user.name,
+            surname: user.surname,
             role: user.role.name,
             company: user.company.map(|c| c.into()),
             created_at: user.created_at,

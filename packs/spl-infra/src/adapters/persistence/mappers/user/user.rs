@@ -19,6 +19,8 @@ impl IntoWithContext<User, UserMapperContext> for Model {
             username: self.username,
             email: self.email,
             password_hash: self.password_hash,
+            name: self.name,
+            surname: self.surname,
             role: context.role,
             company: context.company,
             created_at: self.created_at.into(),
@@ -34,6 +36,8 @@ impl From<User> for ActiveModel {
             username: Set(entity.username),
             email: Set(entity.email),
             password_hash: Set(entity.password_hash),
+            name: Set(entity.name),
+            surname: Set(entity.surname),
             role_id: Set(entity.role.id),
             company_id: Set(entity.company.map(|c| c.id)), // Extract ID from nested company
             created_at: Set(entity.created_at.into()),

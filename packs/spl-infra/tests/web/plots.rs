@@ -34,6 +34,8 @@ async fn test_get_plots_success() {
         username: "testuser".to_string(),
         email: "test@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 2,
             name: "user".to_string(),
@@ -130,6 +132,8 @@ async fn test_get_plot_by_id_success() {
         username: "testuser".to_string(),
         email: "test@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 2,
             name: "user".to_string(),
@@ -225,6 +229,8 @@ async fn test_create_plot_success() {
         username: "supervisor".to_string(),
         email: "supervisor@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 3,
             name: "supervisor".to_string(),
@@ -328,6 +334,8 @@ async fn test_create_plot_forbidden() {
         username: "user".to_string(),
         email: "user@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 2,
             name: "user".to_string(),
@@ -415,6 +423,8 @@ async fn test_update_plot_success() {
         username: "testuser".to_string(),
         email: "test@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 2,
             name: "supervisor".to_string(),
@@ -525,6 +535,8 @@ async fn test_delete_plot_success() {
         username: "testuser".to_string(),
         email: "test@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 2,
             name: "supervisor".to_string(),
@@ -631,6 +643,8 @@ async fn test_detailed_plots_with_label_filtering() {
         username: "testuser".to_string(),
         email: "test@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 2,
             name: "user".to_string(),
@@ -719,3 +733,5 @@ async fn test_detailed_plots_with_label_filtering() {
 
     assert_eq!(response.status(), StatusCode::OK);
 }
+
+

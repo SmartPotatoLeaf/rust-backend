@@ -40,6 +40,8 @@ async fn test_rbac_admin_access_user_route() {
         username: "test_admin".to_string(),
         email: "admin@example.com".to_string(),
         password_hash: "hashed_secret".to_string(),
+        name: None,
+        surname: None,
         role: admin_role.clone(), // Has Admin Role object
         company: None,
         created_at: chrono::Utc::now(),

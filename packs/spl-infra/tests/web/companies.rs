@@ -34,6 +34,8 @@ async fn test_get_company_success() {
         username: "testuser".to_string(),
         email: "test@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 2,
             name: "user".to_string(),
@@ -102,6 +104,8 @@ async fn test_create_company_admin_only_success() {
         username: "adminuser".to_string(),
         email: "admin@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 1,
             name: "admin".to_string(),
@@ -176,6 +180,8 @@ async fn test_update_company_success() {
         username: "adminuser".to_string(),
         email: "admin@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 1,
             name: "admin".to_string(),
@@ -268,6 +274,8 @@ async fn test_delete_company_success() {
         username: "adminuser".to_string(),
         email: "admin@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 1,
             name: "admin".to_string(),
@@ -333,3 +341,5 @@ async fn test_delete_company_success() {
     let status_response: StatusResponse = serde_json::from_slice(&body).unwrap();
     assert!(status_response.success);
 }
+
+

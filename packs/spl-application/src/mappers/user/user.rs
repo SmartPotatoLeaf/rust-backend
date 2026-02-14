@@ -21,6 +21,8 @@ impl IntoWithContext<User, UserCreationContext> for CreateUserDto {
             username: self.username,
             email: self.email,
             password_hash: context.password_hash,
+            name: self.name,
+            surname: self.surname,
             role: context.role,
             company: context.company,
             created_at: Utc::now(),
@@ -47,6 +49,8 @@ impl IntoWithContext<User, UserUpdateContext> for UpdateUserDto {
             username: self.username.unwrap_or(current.username),
             email: self.email.unwrap_or(current.email),
             password_hash: context.password_hash.unwrap_or(current.password_hash),
+            name: self.name.or(current.name),
+            surname: self.surname.or(current.surname),
             role: context.role.unwrap_or(current.role),
             company: if self.company_id.is_some() {
                 context.company

@@ -22,6 +22,8 @@ async fn test_me_endpoint_success() {
         username: "meuser".to_string(),
         email: "me@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 2,
             name: "user".to_string(),
@@ -78,3 +80,4 @@ async fn test_me_endpoint_success() {
     assert_eq!(body_json["email"], "me@example.com");
     assert_eq!(body_json["id"], user_id.to_string());
 }
+

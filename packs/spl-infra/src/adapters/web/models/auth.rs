@@ -37,6 +37,10 @@ pub struct RegisterRequest {
     pub email: String,
     #[validate(length(min = 8, max = 128))]
     pub password: String,
+    #[validate(length(min = 1, max = 100))]
+    pub name: Option<String>,
+    #[validate(length(min = 1, max = 100))]
+    pub surname: Option<String>,
     pub company_id: Option<Uuid>,
     pub role: Option<String>,
 }

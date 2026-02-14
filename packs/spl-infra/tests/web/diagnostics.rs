@@ -22,6 +22,8 @@ async fn test_get_all_labels_success() {
         username: "testuser".to_string(),
         email: "test@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 2,
             name: "user".to_string(),
@@ -107,6 +109,8 @@ async fn test_get_all_mark_types_success() {
         username: "adminuser".to_string(),
         email: "admin@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 1,
             name: "admin".to_string(),
@@ -190,6 +194,8 @@ async fn test_update_label_success() {
         username: "adminuser".to_string(),
         email: "admin@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 1,
             name: "admin".to_string(),
@@ -294,6 +300,8 @@ async fn test_delete_label_success() {
         username: "adminuser".to_string(),
         email: "admin@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 1,
             name: "admin".to_string(),
@@ -388,6 +396,8 @@ async fn test_delete_prediction_success() {
         username: "testuser".to_string(),
         email: "test@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 2,
             name: "user".to_string(),
@@ -498,3 +508,5 @@ async fn test_delete_prediction_success() {
     let status_response: StatusResponse = serde_json::from_slice(&body).unwrap();
     assert!(status_response.success);
 }
+
+

@@ -77,6 +77,8 @@ async fn test_login_success() {
         username: "testuser".to_string(),
         email: "test@example.com".to_string(),
         password_hash: "hashed_secret".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: ROLE_USER_ID,
             name: "User".to_string(),

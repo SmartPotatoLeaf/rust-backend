@@ -11,6 +11,8 @@ pub struct UserResponse {
     pub id: Uuid,
     pub username: String,
     pub email: String,
+    pub name: Option<String>,
+    pub surname: Option<String>,
     pub role: String,
     pub company_id: Option<Uuid>,
     pub created_at: DateTime<Utc>,
@@ -20,6 +22,8 @@ pub struct UserResponse {
 pub struct SimplifiedUserResponse {
     pub id: Uuid,
     pub username: String,
+    pub name: Option<String>,
+    pub surname: Option<String>,
     pub role: String,
 }
 
@@ -28,6 +32,8 @@ pub struct FullUserResponse {
     pub id: Uuid,
     pub username: String,
     pub email: String,
+    pub name: Option<String>,
+    pub surname: Option<String>,
     pub role: String,
     pub company: Option<CompanyResponse>,
     pub created_at: DateTime<Utc>,
@@ -41,6 +47,10 @@ pub struct UpdateUserRequest {
     pub email: Option<String>,
     #[validate(length(min = 8, max = 128))]
     pub password: Option<String>,
+    #[validate(length(min = 1, max = 100))]
+    pub name: Option<String>,
+    #[validate(length(min = 1, max = 100))]
+    pub surname: Option<String>,
     pub role: Option<String>,
     pub company_id: Option<Uuid>,
 }

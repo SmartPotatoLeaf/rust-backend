@@ -87,6 +87,8 @@ async fn test_create_user_admin_creates_admin_success() {
         username: "admin".to_string(),
         email: "admin@example.com".to_string(),
         password_hash: "hash".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: ROLE_ADMIN_ID,
             name: "admin".to_string(),
@@ -104,6 +106,8 @@ async fn test_create_user_admin_creates_admin_success() {
         username: "newadmin".to_string(),
         email: "new@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: ROLE_ADMIN_ID,
             name: "admin".to_string(),
@@ -133,6 +137,8 @@ async fn test_create_user_admin_creates_admin_success() {
         username: "supervisor".to_string(),
         email: "sup@example.com".to_string(),
         password_hash: "hash".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: ROLE_SUPERVISOR_ID,
             name: "supervisor".to_string(),
@@ -150,6 +156,8 @@ async fn test_create_user_admin_creates_admin_success() {
         username: "user".to_string(),
         email: "user@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: ROLE_USER_ID,
             name: "user".to_string(),
@@ -213,6 +221,8 @@ async fn test_create_user_admin_creates_admin_success() {
         username: "newadmin".to_string(),
         email: "new@example.com".to_string(),
         password: "pass".to_string(),
+        name: None,
+        surname: None,
         company_id: None,
         role: Some("admin".to_string()),
     };
@@ -243,6 +253,8 @@ async fn test_create_user_supervisor_creates_user_success() {
         username: "supervisor".to_string(),
         email: "sup@example.com".to_string(),
         password_hash: "hash".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: ROLE_SUPERVISOR_ID,
             name: "supervisor".to_string(),
@@ -260,6 +272,8 @@ async fn test_create_user_supervisor_creates_user_success() {
         username: "user".to_string(),
         email: "user@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: ROLE_USER_ID,
             name: "user".to_string(),
@@ -341,6 +355,8 @@ async fn test_create_user_supervisor_creates_user_success() {
         username: "user".to_string(),
         email: "user@example.com".to_string(),
         password: "pass".to_string(),
+        name: None,
+        surname: None,
         company_id: None,
         role: Some("user".to_string()),
     };

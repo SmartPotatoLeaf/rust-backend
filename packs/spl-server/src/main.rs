@@ -123,6 +123,8 @@ async fn main() -> Result<()> {
                                     username: admin_config.username.clone(),
                                     email: admin_config.email.clone(),
                                     password_hash: hash,
+                                    name: None,
+                                    surname: None,
                                     role: admin_role,
                                     company: None,
                                     created_at: chrono::Utc::now(),

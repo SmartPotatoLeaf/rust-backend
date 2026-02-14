@@ -21,6 +21,8 @@ async fn test_login_endpoint_success() {
         username: "webuser".to_string(),
         email: "web@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 2,
             name: "user".to_string(),
@@ -101,6 +103,8 @@ async fn test_login_endpoint_with_email_success() {
         username: "webuser".to_string(),
         email: "web@example.com".to_string(),
         password_hash: "hashed".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 2,
             name: "user".to_string(),
@@ -205,4 +209,5 @@ async fn test_login_endpoint_missing_identifier() {
 
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
+
 

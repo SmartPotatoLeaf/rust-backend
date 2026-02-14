@@ -6,6 +6,8 @@ pub struct CreateUserDto {
     pub username: String,
     pub email: String,
     pub password: String,
+    pub name: Option<String>,
+    pub surname: Option<String>,
     pub company_id: Option<Uuid>,
     pub role: Option<String>,
 }
@@ -15,6 +17,8 @@ pub struct UpdateUserDto {
     pub username: Option<String>,
     pub email: Option<String>,
     pub password: Option<String>,
+    pub name: Option<String>,
+    pub surname: Option<String>,
     pub role: Option<String>,
     pub company_id: Option<Uuid>,
 }

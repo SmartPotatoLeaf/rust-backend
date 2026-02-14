@@ -1,7 +1,7 @@
 use spl_domain::ports::auth::TokenGenerator;
 use spl_infra::adapters::auth::jwt::JwtTokenGenerator;
 use spl_shared::config::{
-    AdminConfig, AppConfig, AzureConfig, DatabaseConfig, IntegrationsConfig, ModelServingConfig,
+    AdminConfig, AppConfig, DatabaseConfig, IntegrationsConfig, ModelServingConfig,
     ServerConfig, StorageConfig,
 };
 use std::sync::Arc;

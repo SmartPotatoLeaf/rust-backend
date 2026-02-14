@@ -25,6 +25,18 @@ impl MigrationTrait for Migration {
                     )
                     .col(ColumnDef::new(Users::PasswordHash).string().not_null())
                     .col(
+                        ColumnDef::new(Users::Name)
+                            .string()
+                            .string_len(100)
+                            .null(),
+                    )
+                    .col(
+                        ColumnDef::new(Users::Surname)
+                            .string()
+                            .string_len(100)
+                            .null(),
+                    )
+                    .col(
                         ColumnDef::new(Users::RoleId)
                             .integer()
                             .not_null(),
@@ -68,6 +80,8 @@ enum Users {
     Username,
     Email,
     PasswordHash,
+    Name,
+    Surname,
     RoleId,
     CreatedAt,
     UpdatedAt,

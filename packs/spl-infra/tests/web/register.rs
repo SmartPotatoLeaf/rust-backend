@@ -30,6 +30,8 @@ async fn test_register_endpoint_success() {
         username: "admin".to_string(),
         email: "admin@example.com".to_string(),
         password_hash: "hash".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: admin_role_id,
             name: "admin".to_string(),
@@ -47,6 +49,8 @@ async fn test_register_endpoint_success() {
         username: "newuser".to_string(),
         email: "new@example.com".to_string(),
         password_hash: "hashed_new".to_string(),
+        name: None,
+        surname: None,
         role: Role {
             id: 1,
             name: "user".to_string(),
@@ -173,3 +177,5 @@ async fn test_register_endpoint_success() {
     assert_eq!(body_json["email"], "new@example.com");
     assert_eq!(body_json["id"], new_user_id.to_string());
 }
+
+

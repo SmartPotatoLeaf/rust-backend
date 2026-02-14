@@ -10,6 +10,10 @@ pub struct Model {
     #[sea_orm(unique)]
     pub email: String,
     pub password_hash: String,
+    #[sea_orm(column_type = "String(StringLen::N(100))")]
+    pub name: Option<String>,
+    #[sea_orm(column_type = "String(StringLen::N(100))")]
+    pub surname: Option<String>,
     pub role_id: i32,
     pub company_id: Option<Uuid>,
     pub created_at: DateTimeWithTimeZone,
