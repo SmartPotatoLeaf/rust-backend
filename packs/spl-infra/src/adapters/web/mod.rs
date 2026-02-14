@@ -8,7 +8,7 @@ use http::{header, Method};
 use spl_shared::config::AppConfig;
 use spl_shared::http::middleware::rate_limit::RateLimitState;
 use std::sync::Arc;
-use tower_http::cors::{AllowOrigin, Any, CorsLayer};
+use tower_http::cors::{AllowOrigin, CorsLayer};
 use tracing::info;
 use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
 use utoipa::{Modify, OpenApi};
@@ -126,7 +126,7 @@ pub fn router(state: Arc<AppState>, rate_limit_state: Arc<RateLimitState>) -> Ro
             SwaggerUi::new(base_path.to_string() + "/swagger-ui")
                 .url("/api-docs/openapi.json", openapi),
         )
-        .nest(base_path, auth::router(rate_limit_state))
+        .nest(base_path, auth::router(rate_limit_state.clone()))
         .nest(base_path, user::router(state.clone()))
         .nest(base_path, companies::router(state.clone()))
         .nest(base_path, dashboard::router(state.clone()))
@@ -134,7 +134,7 @@ pub fn router(state: Arc<AppState>, rate_limit_state: Arc<RateLimitState>) -> Ro
         .nest(base_path, recommendation::router(state.clone()))
         .nest(base_path, diagnostics::labels::router(state.clone()))
         .nest(base_path, diagnostics::mark_types::router(state.clone()))
-        .nest(base_path, diagnostics::prediction::router(state.clone()))
+        .nest(base_path, diagnostics::prediction::router(state.clone(), rate_limit_state))
         .nest(base_path, plots::router(state.clone()))
         .nest(base_path, feedback::status::router(state.clone()))
         .nest(base_path, feedback::router());

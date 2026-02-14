@@ -1,6 +1,9 @@
 use crate::adapters::web::mappers::diagnostics::prediction::FilterPredictionMapperContext;
 use crate::adapters::web::middleware::auth::AuthUser;
-use crate::adapters::web::models::image::ImageResponse;
+use crate::adapters::web::models::diagnostics::label::RawLabelResponse;
+use crate::adapters::web::models::diagnostics::prediction_mark::RawPredictionMarkResponse;
+use crate::adapters::web::models::diagnostics::RawPredictionResponse;
+use crate::adapters::web::models::image::{ImageResponse, RawImageResponse};
 use crate::adapters::web::models::{
     common::SimplifiedQuery,
     diagnostics::{
@@ -16,14 +19,19 @@ use crate::adapters::web::state::AppState;
 use axum::{
     extract::{Multipart, Path, Query, State},
     http::{HeaderMap, StatusCode},
+    middleware,
     response::IntoResponse,
     routing::{get, post},
-    Json, Router,
+    Extension, Json, Router,
 };
 use serde::{Deserialize, Serialize};
 use spl_shared::error::AppError;
 use spl_shared::error::Result;
+use spl_shared::http::extractor::multipart::extract_file;
 use spl_shared::http::extractor::ValidatedJson;
+use spl_shared::http::middleware::{
+    local_rate_limit_middleware, EndpointRateLimit, RateLimitState,
+};
 use spl_shared::http::responses::{ok_if_or_not_found, ok_iter_if_or_not_found, StatusResponse};
 use spl_shared::traits::IntoWithContext;
 use std::sync::Arc;
@@ -51,25 +59,80 @@ enum PredictionOrSimplifiedResponse {
         MarkTypeResponse,
         SimplifiedPredictionResponse,
         PredictionOrSimplifiedResponse,
-        StatusResponse
+        StatusResponse,
+        RawPredictionResponse,
+        RawImageResponse,
+        RawLabelResponse,
+        RawPredictionMarkResponse
     )),
     tags((name = "diagnostics/predictions", description = "Prediction management endpoints"))
 )]
 pub struct PredictionApi;
 
-pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
-    Router::new()
+pub fn router(state: Arc<AppState>, limit_state: Arc<RateLimitState>) -> Router<Arc<AppState>> {
+    let mut router = Router::new();
+
+    if let Some(config) = state.config.rate_limiting.clone() {
+        let rate_limit_layer = middleware::from_fn_with_state(
+            limit_state.clone(),
+            local_rate_limit_middleware,
+        );
+
+        router = router.route(
+            "/public/diagnostics/predict",
+            post(predict)
+                .route_layer(rate_limit_layer)
+                .route_layer(Extension(
+                    EndpointRateLimit::new(config.default_limit)
+                        .with_window(config.window_seconds)
+                        .with_behavior(
+                            config.endpoint_behavior.map(Into::into).unwrap_or_default(),
+                        ),
+                )),
+        )
+    }
+
+    router
         .route(
             "/diagnostics/predictions",
             post(create).get(get_all_by_user_id),
         )
         .route("/diagnostics/predictions/filter", post(filter))
         .route(
-            "/diagnostics/predictions/:id",
+            "/diagnostics/predictions/{id}",
             get(get_by_id).delete(delete_prediction),
         )
-        .route("/diagnostics/predictions/blobs/*path", get(read_blob))
+        .route("/diagnostics/predictions/blobs/{*path}", get(read_blob))
         .with_state(state)
+}
+
+#[utoipa::path(
+    post,
+    path = "/public/diagnostics/predict",
+    request_body(content = CreatePredictionRequest, content_type = "multipart/form-data"),
+    responses(
+        (status = 201, description = "Prediction realized", body = RawPredictionResponse),
+        (status = 400, description = "Invalid input", body = StatusResponse),
+        (status = 401, description = "Unauthorized", body = StatusResponse),
+        (status = 429, description = "Too Many Requests", body = StatusResponse),
+        (status = 500, description = "Internal Server Error", body = StatusResponse)
+    ),
+    tag = "diagnostics/predictions"
+)]
+async fn predict(
+    State(state): State<Arc<AppState>>,
+    mut multipart: Multipart,
+) -> Result<impl IntoResponse> {
+    let (bytes, filename) = extract_file("file", &mut multipart).await?;
+    let prediction = state
+        .prediction_service
+        .predict(bytes, filename.unwrap_or(Uuid::new_v4().to_string()))
+        .await?;
+
+    Ok((
+        StatusCode::OK,
+        Json(RawPredictionResponse::from(prediction)),
+    ))
 }
 
 #[utoipa::path(
@@ -90,33 +153,15 @@ async fn create(
     AuthUser(user): AuthUser,
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse> {
-    let mut file_bytes = None;
-    let mut filename: String = Uuid::new_v4().to_string();
-
-    while let Some(field) = multipart
-        .next_field()
-        .await
-        .map_err(|e| AppError::ValidationError(format!("Failed to process multipart: {}", e)))?
-    {
-        let name = field.name().unwrap_or("").to_string();
-
-        if name == "file" {
-            if let Some(fname) = field.file_name() {
-                filename = fname.to_string();
-            }
-
-            let data = field.bytes().await.map_err(|e| {
-                AppError::ValidationError(format!("Failed to read file bytes: {}", e))
-            })?;
-            file_bytes = Some(data.to_vec());
-        }
-    }
-
-    let bytes = file_bytes.ok_or_else(|| AppError::ValidationError("No file provided".into()))?;
+    let (bytes, filename) = extract_file("file", &mut multipart).await?;
 
     let prediction = state
         .prediction_service
-        .predict_and_create(user.id, bytes, filename)
+        .predict_and_create(
+            user.id,
+            bytes,
+            filename.unwrap_or(Uuid::new_v4().to_string()),
+        )
         .await?;
 
     Ok((
@@ -262,7 +307,7 @@ async fn filter(
 
 #[utoipa::path(
     get,
-    path = "/diagnostics/predictions/blobs/*path",
+    path = "/diagnostics/predictions/blobs/{*path}",
     params(("path" = String, Path, description = "Blob path")),
     responses(
         (status = 200, description = "Blob content"),
