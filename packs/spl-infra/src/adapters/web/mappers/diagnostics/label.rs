@@ -1,3 +1,4 @@
+use crate::adapters::web::models::diagnostics::label::RawLabelResponse;
 use crate::adapters::web::models::diagnostics::{
     CreateLabelRequest, LabelResponse, SimplifiedLabelResponse, UpdateLabelRequest,
 };
@@ -45,3 +46,13 @@ maps_to!(SimplifiedLabelResponse {
     id,
     name,
 } #from [ Label ]);
+
+maps_to!(
+    RawLabelResponse {
+        name,
+        description,
+        min,
+        max,
+        weight,
+    } #from [ Label ]
+);

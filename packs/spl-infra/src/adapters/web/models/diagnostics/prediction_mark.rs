@@ -12,3 +12,9 @@ pub struct PredictionMarkResponse {
     pub prediction_id: Uuid,
     pub created_at: DateTime<Utc>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct RawPredictionMarkResponse {
+    pub data: String,
+    pub mark_type: String,
+}

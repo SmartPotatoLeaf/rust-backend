@@ -1,14 +1,16 @@
 use crate::adapters::web::models::diagnostics::{
-    prediction_mark::PredictionMarkResponse, LabelResponse, SimplifiedLabelResponse,
+    prediction_mark::{PredictionMarkResponse, RawPredictionMarkResponse},
+    LabelResponse, SimplifiedLabelResponse,
 };
-use crate::adapters::web::models::image::ImageResponse;
+use crate::adapters::web::models::feedback::{FeedbackResponse, SimplifiedFeedbackResponse};
+use crate::adapters::web::models::image::{ImageResponse, RawImageResponse};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use spl_shared::validation::validate_range_min_max;
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::{Validate, ValidationError};
-use crate::adapters::web::models::feedback::{FeedbackResponse, SimplifiedFeedbackResponse};
+use crate::adapters::web::models::diagnostics::label::RawLabelResponse;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct PredictionResponse {
@@ -22,7 +24,7 @@ pub struct PredictionResponse {
     pub image: ImageResponse,
     pub label: LabelResponse,
     pub marks: Vec<PredictionMarkResponse>,
-    pub feedback: Option<FeedbackResponse>
+    pub feedback: Option<FeedbackResponse>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -74,4 +76,15 @@ pub struct PredictionsListResponse {
 pub struct CreatePredictionRequest {
     #[schema(format = "binary")]
     pub file: Vec<u8>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct RawPredictionResponse {
+    pub presence_confidence: f32,
+    pub absence_confidence: f32,
+    pub severity: f32,
+    pub created_at: DateTime<Utc>,
+    pub image: RawImageResponse,
+    pub label: RawLabelResponse,
+    pub marks: Vec<RawPredictionMarkResponse>,
 }

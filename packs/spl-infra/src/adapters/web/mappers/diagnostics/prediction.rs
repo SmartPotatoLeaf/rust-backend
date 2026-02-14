@@ -1,8 +1,7 @@
-use crate::adapters::web::models::diagnostics::{
-    FilterPredictionsRequest, PredictionResponse, SimplifiedPredictionResponse,
-};
+use crate::adapters::web::models::diagnostics::{FilterPredictionsRequest, PredictionResponse, RawPredictionResponse, SimplifiedPredictionResponse};
 use spl_application::dtos::diagnostics::FilterPredictionDto;
 use spl_domain::entities::diagnostics::Prediction;
+use spl_domain::entities::diagnostics::prediction::RawPrediction;
 use spl_domain::entities::user::User;
 use spl_shared::error::AppError;
 use spl_shared::traits::IntoWithContext;
@@ -66,6 +65,21 @@ impl From<Prediction> for SimplifiedPredictionResponse {
             marks: param.marks.into_iter().map(Into::into).collect(),
             created_at: param.created_at,
             feedback: param.feedback.map(Into::into),
+        }
+    }
+}
+
+
+impl From<RawPrediction> for RawPredictionResponse {
+    fn from(value: RawPrediction) -> Self {
+        Self {
+            presence_confidence: value.presence_confidence,
+            absence_confidence: value.absence_confidence,
+            severity: value.severity,
+            created_at: value.created_at,
+            image: value.image.into(),
+            label: value.label.into(),
+            marks: value.marks.into_iter().map(Into::into).collect(),
         }
     }
 }

@@ -3,8 +3,9 @@ use crate::mappers::diagnostics::prediction::CreatePredictionContext;
 use crate::services::access_control::AccessControlService;
 
 use crate::dtos::diagnostics::FilterPredictionDto;
-use spl_domain::entities::diagnostics::{Prediction, PredictionMark};
-use spl_domain::entities::image::Image;
+use spl_domain::entities::diagnostics::prediction::RawPrediction;
+use spl_domain::entities::diagnostics::{Prediction, PredictionMark, RawPredictionMark};
+use spl_domain::entities::image::{Image, RawImage};
 use spl_domain::entities::user::User;
 use spl_domain::ports::integrations::{BlobStorageClient, ModelPredictionClient};
 use spl_domain::ports::repositories::diagnostics::{
@@ -78,6 +79,39 @@ impl PredictionService {
         self.prediction_repo.create(prediction).await
     }
 
+    pub async fn predict(&self, bytes: Vec<u8>, filename: String) -> Result<RawPrediction> {
+        let result = self.model_client.predict(&bytes).await?;
+
+        let severity = result.severity.max(0.0).min(100.0);
+        let label = self
+            .label_repo
+            .get_by_severity(severity)
+            .await?
+            .ok_or_else(|| AppError::Unknown("No label found for severity".into()))?;
+
+        Ok(RawPrediction {
+            presence_confidence: result.lesion_confidence,
+            absence_confidence: 1.0 - result.lesion_confidence,
+            severity,
+            label,
+            image: RawImage {
+                data: result.image,
+                filename: Some(filename),
+            },
+            marks: vec![
+                RawPredictionMark {
+                    mark_type: "leaf_mask".to_string(),
+                    data: result.leaf_mask,
+                },
+                RawPredictionMark {
+                    mark_type: "lt_blg_lesion_mask".to_string(),
+                    data: result.lesion_mask,
+                },
+            ],
+            created_at: chrono::Utc::now(),
+        })
+    }
+
     pub async fn predict_and_create(
         &self,
         user_id: Uuid,
@@ -91,48 +125,35 @@ impl PredictionService {
             .await?
             .ok_or_else(|| AppError::NotFound(format!("User {} not found", user_id)))?;
 
-        // 2. ML Prediction
-        let result = self.model_client.predict(&image_bytes).await?;
-
-        // 3. Helper to determine file paths
+        // Helper to determine file paths
         let now = chrono::Utc::now();
         let filesdir = format!("{}/images/{}", user.id, now.format("%Y-%m-%d_%H-%M-%S"));
         let image_path = format!("{}/image.jpg", filesdir);
 
-        // 4. Upload original image
-        // In legacy, we re-encode the image from the result to ensure it matches what the model saw/processed
-        // (legacy: cv2.imencode(".jpg", result.image))
-        // Here, result.image is Bytes.
-        self.storage_client
-            .upload(result.image.clone(), &image_path)
-            .await?;
+        let prediction = self.predict(image_bytes, filename.clone()).await?;
 
-        // 5. Calculate Severity and Label
-        // Legacy: max(0.0, min(100.0, result.severity))
-        // Result severity is 0-100.
-        let severity = result.severity.max(0.0).min(100.0);
-        let label = self
-            .label_repo
-            .get_by_severity(severity)
-            .await?
-            .ok_or_else(|| AppError::Unknown("No label found for severity".into()))?;
+        self.storage_client
+            .upload(prediction.image.data, &image_path)
+            .await?;
 
         // Upload masks and create Mark entities
         // Legacy names: "leaf", "lt_blg_lesion"
         // Rust result: leaf_mask, lesion_mask
-        let leaf_mask_path = format!("{}/leaf_mask.jpg", filesdir);
-        let lesion_mask_path = format!("{}/lt_blg_lesion_mask.jpg", filesdir);
+        let (leaf_mask, lesion_mask) = (&prediction.marks[0], &prediction.marks[1]);
+
+        let leaf_mask_path = format!("{}/{}.jpg", filesdir, leaf_mask.mark_type);
+        let lesion_mask_path = format!("{}/{}.jpg", filesdir, lesion_mask.mark_type);
 
         tokio::try_join!(
             self.storage_client
-                .upload(result.leaf_mask, &leaf_mask_path),
+                .upload(leaf_mask.data.clone(), &leaf_mask_path),
             self.storage_client
-                .upload(result.lesion_mask, &lesion_mask_path),
+                .upload(lesion_mask.data.clone(), &lesion_mask_path),
         )?;
 
         let (leaf_type_opt, lesion_type_opt) = tokio::try_join!(
-            self.mark_type_repo.get_by_name("leaf_mask"),
-            self.mark_type_repo.get_by_name("lt_blg_lesion_mask"),
+            self.mark_type_repo.get_by_name(&leaf_mask.mark_type),
+            self.mark_type_repo.get_by_name(&lesion_mask.mark_type),
         )?;
 
         let leaf_type = leaf_type_opt
@@ -175,13 +196,13 @@ impl PredictionService {
             id: Uuid::new_v4(),
             user,
             image: image.clone(),
-            label,
+            label: prediction.label,
             plot_id: None,
             // Legacy: lesion_confidence.presence
-            presence_confidence: result.lesion_confidence,
+            presence_confidence: prediction.presence_confidence,
             // Legacy: lesion_confidence.absence
-            absence_confidence: 1.0 - result.lesion_confidence,
-            severity,
+            absence_confidence: prediction.absence_confidence,
+            severity: prediction.severity,
             feedback: None,
             created_at: chrono::Utc::now(),
             marks: vec![],

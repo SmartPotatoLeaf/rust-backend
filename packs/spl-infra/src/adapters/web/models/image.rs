@@ -12,3 +12,10 @@ pub struct ImageResponse {
     pub prediction_id: Option<Uuid>,
     pub created_at: DateTime<Utc>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct RawImageResponse {
+    pub data: String,
+    pub filename: Option<String>,
+}
+

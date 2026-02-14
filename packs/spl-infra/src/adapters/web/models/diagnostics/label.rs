@@ -62,3 +62,12 @@ pub struct SimplifiedLabelResponse {
     pub id: i32,
     pub name: String,
 }
+
+#[derive(Debug, Serialize, ToSchema, Deserialize, Clone)]
+pub struct RawLabelResponse {
+    pub name: String,
+    pub description: Option<String>,
+    pub min: f32,
+    pub max: f32,
+    pub weight: i32,
+}
