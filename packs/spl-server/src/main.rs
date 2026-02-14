@@ -97,7 +97,8 @@ async fn main() -> Result<()> {
         storage_client,
     ));
 
-    let app = router(app_state, rate_limit_state);
+    let app =
+        router(app_state, rate_limit_state).into_make_service_with_connect_info::<SocketAddr>();
 
     // 10. Start Server
     let addr: SocketAddr = format!("{}:{}", config.server.host, config.server.port)
