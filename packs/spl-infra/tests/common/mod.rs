@@ -15,10 +15,14 @@ use spl_infra::adapters::integrations::{
     model_serving::mock::MockModelClient, storage::mock::MockBlobClient,
 };
 use spl_infra::adapters::web::{router, state::AppState};
-use spl_shared::config::{AppConfig, IntegrationsConfig, ModelServingConfig, StorageConfig};
+use spl_shared::http::middleware::rate_limit::RateLimitState;
 use std::sync::Arc;
 
+pub mod config;
 pub mod mocks;
+
+use crate::common::config::create_config;
+
 pub use mocks::*;
 use spl_application::services::dashboard::DashboardService;
 use spl_application::services::feedback::status::FeedbackStatusService;
@@ -157,41 +161,7 @@ pub fn build_app_full(
         label_repo.clone(),
     ));
 
-    let config = Arc::new(AppConfig {
-        server: spl_shared::config::ServerConfig {
-            host: "127.0.0.1".into(),
-            port: 8080,
-            jwt_secret: "test_secret".into(),
-            jwt_expiration_hours: 24,
-            cors_allowed_origins: None,
-        },
-
-        database: spl_shared::config::DatabaseConfig {
-            url: "".into(),
-            max_connections: None,
-            min_connections: None,
-            connect_timeout: None,
-            idle_timeout: None,
-            max_lifetime: None,
-        },
-        admin: None,
-        integrations: IntegrationsConfig {
-            model_serving: ModelServingConfig {
-                provider: "tensorflow".to_string(),
-                url: "".to_string(),
-                model_name: "".to_string(),
-                timeout_seconds: 0,
-                image_size: Some(256),
-                concurrency_limit: None,
-            },
-            storage: StorageConfig {
-                provider: "azure".to_string(),
-                connection_string: None,
-                container_name: None,
-                local_base_path: None,
-            },
-        },
-    });
+    let config = Arc::new(create_config());
 
     let mut roles = std::collections::HashMap::new();
     roles.insert("admin".to_string(), 100);
@@ -218,5 +188,9 @@ pub fn build_app_full(
         model_client,
         storage_client,
     ));
-    router(state)
+
+    // Rate limiting disabled for tests
+    let rate_limit_state = Arc::new(RateLimitState::disabled());
+
+    router(state, rate_limit_state)
 }
