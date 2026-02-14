@@ -10,7 +10,6 @@ use std::sync::Arc;
 
 pub struct AuthUser(pub User);
 
-#[async_trait::async_trait]
 impl FromRequestParts<Arc<AppState>> for AuthUser {
     type Rejection = Response;
 

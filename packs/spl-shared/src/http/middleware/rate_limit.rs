@@ -343,7 +343,7 @@ async fn apply_rate_limit(
 /// Global rate limiting middleware (applies to all requests)
 pub async fn rate_limit_middleware(
     State(state): State<Arc<RateLimitState>>,
-    connect_info: Option<ConnectInfo<SocketAddr>>,
+    connect_info: ConnectInfo<SocketAddr>,
     request: Request,
     next: Next,
 ) -> Result<Response, Response> {
@@ -351,7 +351,7 @@ pub async fn rate_limit_middleware(
     apply_rate_limit(
         state,
         RateLimitConfig::Global(behavior),
-        connect_info,
+        Some(connect_info),
         request,
         next,
     )
@@ -362,7 +362,7 @@ pub async fn rate_limit_middleware(
 pub async fn local_rate_limit_middleware(
     State(state): State<Arc<RateLimitState>>,
     config: Option<Extension<EndpointRateLimit>>,
-    connect_info: Option<ConnectInfo<SocketAddr>>,
+    connect_info: ConnectInfo<SocketAddr>,
     request: Request,
     next: Next,
 ) -> Result<Response, Response> {
@@ -385,7 +385,7 @@ pub async fn local_rate_limit_middleware(
     apply_rate_limit(
         state,
         RateLimitConfig::Endpoint(config),
-        connect_info,
+        Some(connect_info),
         request,
         next,
     )

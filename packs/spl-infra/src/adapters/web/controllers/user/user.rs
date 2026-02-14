@@ -36,7 +36,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
     ));
 
     Router::new().route("/users/me", get(me)).route(
-        "/users/:id",
+        "/users/{id}",
         put(update_user)
             .delete(delete_user)
             .route_layer(admin_only_layer)

@@ -45,7 +45,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
     Router::new()
         .route("/feedback/statuses", get(get_all).post(create))
         .route(
-            "/feedback/statuses/:id",
+            "/feedback/statuses/{id}",
             get(get_by_id).put(update).delete(delete_status),
         )
         .route_layer(admin_only_layer)

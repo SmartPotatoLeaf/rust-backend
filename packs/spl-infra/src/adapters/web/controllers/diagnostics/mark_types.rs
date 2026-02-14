@@ -63,7 +63,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
     let admin_router = Router::new()
         .route("/diagnostics/marks/types", post(create_mark_type))
         .route(
-            "/diagnostics/marks/types/:id",
+            "/diagnostics/marks/types/{id}",
             put(update_mark_type).delete(delete_mark_type),
         )
         .route_layer(admin_only_layer)
@@ -76,7 +76,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
             get(get_all_mark_types),
         )
         .route(
-            "/diagnostics/marks/types/:id",
+            "/diagnostics/marks/types/{id}",
             get(get_mark_type),
         )
         .with_state(state);

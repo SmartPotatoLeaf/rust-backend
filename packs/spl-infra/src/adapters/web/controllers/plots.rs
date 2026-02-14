@@ -84,11 +84,11 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
 
     let supervisor_lower_router = Router::new()
         .route("/plots", get(get_plots))
-        .route("/plots/:id", get(get_plot))
-        .route("/plots/:id/assign", post(assign_predictions))
+        .route("/plots/{id}", get(get_plot))
+        .route("/plots/{id}/assign", post(assign_predictions))
         .route("/plots/unassign", post(unassign_predictions))
         .route("/plots/detailed", post(get_detailed_plots))
-        .route("/plots/detailed/:id", get(get_detailed_plot))
+        .route("/plots/detailed/{id}", get(get_detailed_plot))
         .route("/plots/default/detailed", get(get_default_detailed))
         .route_layer(permission_layer.clone())
         .route_layer(supervisor_lower_extension_roles.clone())
@@ -96,7 +96,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
 
     let supervisor_only_router = Router::new()
         .route("/plots", post(create_plot))
-        .route("/plots/:id", put(update_plot).delete(delete_plot))
+        .route("/plots/{id}", put(update_plot).delete(delete_plot))
         .route_layer(permission_layer.clone())
         .route_layer(supervisor_only_extension_roles.clone())
         .with_state(state);
@@ -277,7 +277,7 @@ async fn delete_plot(
     ),
     request_body = AssignPredictionsRequest,
     responses(
-        (status = 200, description = "Predictions assigned", body = AssignPredictionsResponse),
+        (status = 200, description = "Predictions assigned", body = AssignedPlotResponse),
         (status = 400, description = "Validation error", body = StatusResponse),
         (status = 401, description = "Unauthorized", body = StatusResponse),
         (status = 404, description = "Plot or predictions not found", body = StatusResponse),
@@ -310,7 +310,7 @@ async fn assign_predictions(
     path = "/plots/unassign",
     request_body = AssignPredictionsRequest,
     responses(
-        (status = 200, description = "Predictions unassigned", body = AssignPredictionsResponse),
+        (status = 200, description = "Predictions unassigned", body = AssignedPlotResponse),
         (status = 400, description = "Validation error", body = StatusResponse),
         (status = 401, description = "Unauthorized", body = StatusResponse),
         (status = 404, description = "Predictions not found", body = StatusResponse),
@@ -342,7 +342,7 @@ async fn unassign_predictions(
     path = "/plots/detailed",
     request_body = DetailedPlotsRequest,
     responses(
-        (status = 200, description = "Paginated detailed plots", body = PaginatedDetailedPlotResponse),
+        (status = 200, description = "Paginated detailed plots", body = DetailedPlotsResponse),
         (status = 400, description = "Validation error", body = StatusResponse),
         (status = 401, description = "Unauthorized", body = StatusResponse),
         (status = 500, description = "Internal Server Error", body = StatusResponse)
@@ -370,7 +370,7 @@ async fn get_detailed_plots(
         ("id" = Uuid, Path, description = "Plot ID")
     ),
     responses(
-        (status = 200, description = "Detailed plot statistics", body = DetailedPlotWebResponse),
+        (status = 200, description = "Detailed plot statistics", body = DetailedPlotResponse),
         (status = 401, description = "Unauthorized", body = StatusResponse),
         (status = 404, description = "Plot not found", body = StatusResponse),
         (status = 500, description = "Internal Server Error", body = StatusResponse)
@@ -399,7 +399,7 @@ async fn get_detailed_plot(
     get,
     path = "/plots/default/detailed",
     responses(
-        (status = 200, description = "Default plot statistics", body = DetailedPlotWebResponse),
+        (status = 200, description = "Default plot statistics", body = DetailedPlotResponse),
         (status = 401, description = "Unauthorized", body = StatusResponse),
         (status = 404, description = "No unassigned predictions", body = StatusResponse),
         (status = 500, description = "Internal Server Error", body = StatusResponse)

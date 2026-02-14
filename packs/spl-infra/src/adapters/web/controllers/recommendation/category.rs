@@ -60,7 +60,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
     let admin_router = Router::new()
         .route("/recommendation/categories", post(create))
         .route(
-            "/recommendation/categories/:id",
+            "/recommendation/categories/{id}",
             delete(delete_type).put(update),
         )
         .route_layer(admin_only_layer)
@@ -69,7 +69,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
 
     let public_router = Router::new()
         .route("/recommendation/categories", get(get_all))
-        .route("/recommendation/categories/:id", get(get_by_id))
+        .route("/recommendation/categories/{id}", get(get_by_id))
         .with_state(state);
 
     Router::new().merge(public_router).merge(admin_router)

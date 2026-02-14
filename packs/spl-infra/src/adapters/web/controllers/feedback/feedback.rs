@@ -43,8 +43,8 @@ pub struct FeedbackApi;
 pub fn router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/feedbacks", get(get_all_by_user).post(create))
-        .route("/feedbacks/:id", get(get_by_id).put(update).delete(delete_feedback))
-        .route("/feedbacks/prediction/:prediction_id", get(get_by_prediction))
+        .route("/feedbacks/{id}", get(get_by_id).put(update).delete(delete_feedback))
+        .route("/feedbacks/prediction/{prediction_id}", get(get_by_prediction))
 }
 
 #[utoipa::path(

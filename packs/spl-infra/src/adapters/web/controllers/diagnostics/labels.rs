@@ -62,7 +62,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
     let admin_router = Router::new()
         .route("/diagnostics/labels", post(create_label))
         .route(
-            "/diagnostics/labels/:id",
+            "/diagnostics/labels/{id}",
             put(update_label).delete(delete_label),
         )
         .route_layer(admin_only_layer)
@@ -71,7 +71,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
 
     let public_router = Router::new()
         .route("/diagnostics/labels", get(get_all_labels))
-        .route("/diagnostics/labels/:id", get(get_label))
+        .route("/diagnostics/labels/{id}", get(get_label))
         .with_state(state);
 
     Router::new().merge(public_router).merge(admin_router)

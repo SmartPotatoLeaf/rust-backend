@@ -62,7 +62,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
     let admin_router = Router::new()
         .route("/companies", post(create_company))
         .route(
-            "/companies/:id",
+            "/companies/{id}",
             put(update_company).delete(delete_company),
         )
         .route_layer(admin_only_layer)
@@ -70,7 +70,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
         .with_state(state.clone());
 
     let public_router = Router::new()
-        .route("/companies/:id", get(get_company))
+        .route("/companies/{id}", get(get_company))
         .with_state(state);
 
     Router::new().merge(public_router).merge(admin_router)

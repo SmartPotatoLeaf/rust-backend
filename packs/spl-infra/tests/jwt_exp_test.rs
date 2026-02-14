@@ -8,19 +8,27 @@ mod common;
 #[test]
 fn test_jwt_expiration() {
     let config = create_config();
+    let expected_hours = config.server.jwt_expiration_hours;
 
     let generator = JwtTokenGenerator::new(Arc::new(config));
     let claims = serde_json::json!({
         "role": "User"
     });
 
+    // Capture time before token generation
+    let now = chrono::Utc::now().timestamp() as u64;
     let token = generator.generate("test_user", claims).unwrap();
     let decoded = generator.validate(&token).unwrap();
 
     let exp = decoded["exp"].as_u64().unwrap();
-    let now = chrono::Utc::now().timestamp() as u64;
-    let expected_exp = now + 3600;
+    let expected_exp = now + (expected_hours * 3600);
 
-    // Allow for a small time difference
-    assert!(exp >= expected_exp - 10 && exp <= expected_exp + 10);
+    // Allow for a small time difference (within 10 seconds)
+    assert!(
+        exp >= expected_exp - 10 && exp <= expected_exp + 10,
+        "JWT expiration mismatch: exp={}, expected={} (±10s), configured hours={}",
+        exp,
+        expected_exp,
+        expected_hours
+    );
 }
