@@ -6,6 +6,7 @@ use axum::http::HeaderValue;
 use axum::Router;
 use http::{header, Method};
 use spl_shared::config::AppConfig;
+use spl_shared::http::middleware::rate_limit::RateLimitState;
 use std::sync::Arc;
 use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 use tracing::info;
@@ -99,7 +100,7 @@ fn build_cors_layer(config: &AppConfig) -> Option<CorsLayer> {
     })
 }
 
-pub fn router(state: Arc<AppState>) -> Router {
+pub fn router(state: Arc<AppState>, rate_limit_state: Arc<RateLimitState>) -> Router {
     let mut openapi = ApiDoc::openapi();
     let base_path = "/api/v1";
 
@@ -118,6 +119,7 @@ pub fn router(state: Arc<AppState>) -> Router {
 
     let addon = SecurityAddon {};
     addon.modify(&mut openapi);
+
 
     let mut app = Router::new()
         .merge(

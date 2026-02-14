@@ -1,5 +1,6 @@
 use anyhow::Result;
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
+use sea_orm_migration::MigratorTrait;
 use spl_application::services::feedback::status::FeedbackStatusService;
 use spl_application::services::feedback::FeedbackService;
 use spl_application::{
@@ -47,12 +48,16 @@ use spl_infra::adapters::{
     },
     web::{router, state::AppState},
 };
+use spl_migration::Migrator;
+use spl_shared::adapters::rate_limiting::RateLimiter;
+use spl_shared::adapters::redis::create_redis_pool;
 use spl_shared::config::AppConfig;
+use spl_shared::http::middleware::rate_limit::RateLimitState;
 use spl_shared::telemetry::init_telemetry;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 use uuid::Uuid;
 
 #[tokio::main]
@@ -89,8 +94,7 @@ async fn main() -> Result<()> {
     info!("Connected to database: {}", config.database.url);
 
     // 4.1 Run Migrations
-    use sea_orm_migration::MigratorTrait;
-    use spl_migration::Migrator;
+
     Migrator::up(&db, None).await?;
     info!("Migrations executed successfully.");
 
@@ -246,6 +250,60 @@ async fn main() -> Result<()> {
     tokio::try_join!(model_client.health_check(), storage_client.health_check())?;
     info!("All integrations healthy.");
 
+    // 6.4 Initialize Rate Limiting
+    let rate_limit_state = if let Some(rl_config) = &config.rate_limiting {
+        if rl_config.enabled {
+            // Check if Redis is configured
+            if let Some(redis_config) = &config.redis {
+                info!("Rate limiting enabled, initializing Redis connection...");
+                match create_redis_pool(redis_config).await {
+                    Ok(redis_pool) => {
+                        let limiter = RateLimiter::new(
+                            redis_pool,
+                            rl_config.window_seconds,
+                            rl_config.default_limit,
+                            rl_config.burst_size,
+                        );
+
+                        let global_behavior = rl_config
+                            .global_behavior
+                            .as_deref()
+                            .unwrap_or("allow")
+                            .into();
+
+                        let endpoint_behavior = rl_config
+                            .endpoint_behavior
+                            .as_deref()
+                            .unwrap_or("allow")
+                            .into();
+
+                        info!("Rate limiting initialized successfully");
+                        Arc::new(RateLimitState::new(
+                            limiter,
+                            true,
+                            rl_config.window_seconds,
+                            global_behavior,
+                            endpoint_behavior,
+                        ))
+                    }
+                    Err(e) => {
+                        error!("Failed to create Redis pool for rate limiting: {}", e);
+                        info!("Rate limiting will be disabled due to Redis connection error");
+                        Arc::new(RateLimitState::disabled())
+                    }
+                }
+            } else {
+                warn!("Rate limiting enabled but Redis is not configured. Rate limiting will be disabled.");
+                Arc::new(RateLimitState::disabled())
+            }
+        } else {
+            info!("Rate limiting is disabled in configuration");
+            Arc::new(RateLimitState::disabled())
+        }
+    } else {
+        Arc::new(RateLimitState::disabled())
+    };
+
     // 7. Initialize Services
     let auth_service = Arc::new(AuthService::new(
         user_repo.clone(),
@@ -384,7 +442,8 @@ async fn main() -> Result<()> {
         model_client,
         storage_client,
     ));
-    let app = router(app_state);
+
+    let app = router(app_state, rate_limit_state);
 
     // 8. Start Server
     let addr: SocketAddr = format!("{}:{}", config.server.host, config.server.port)
