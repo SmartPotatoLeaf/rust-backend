@@ -10,12 +10,16 @@ use crate::adapters::web::state::AppState;
 use axum::{
     extract::State,
     http::StatusCode,
+    middleware,
     response::IntoResponse,
     routing::{get, post},
-    Json, Router,
+    Extension, Json, Router,
 };
 
 use spl_shared::http::extractor::ValidatedJson;
+use spl_shared::http::middleware::{
+    local_rate_limit_middleware, EndpointRateLimit, RateLimitState,
+};
 use std::sync::Arc;
 use utoipa::OpenApi;
 
@@ -27,9 +31,18 @@ use utoipa::OpenApi;
 )]
 pub struct AuthApi;
 
-pub fn router() -> Router<Arc<AppState>> {
+pub fn router(rate_limit_state: Arc<RateLimitState>) -> Router<Arc<AppState>> {
+
     Router::new()
-        .route("/auth/login", post(login))
+        .route(
+            "/auth/login",
+            post(login)
+                .route_layer(middleware::from_fn_with_state(
+                    rate_limit_state,
+                    local_rate_limit_middleware,
+                ))
+                .layer(Extension(EndpointRateLimit::new(5).with_window(60))),
+        )
         .route("/auth/register", post(register))
         .route("/auth/health", get(health_check))
         .route("/auth/validate", post(validate))
