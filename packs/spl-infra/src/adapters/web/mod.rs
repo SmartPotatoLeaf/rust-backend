@@ -126,7 +126,7 @@ pub fn router(state: Arc<AppState>, rate_limit_state: Arc<RateLimitState>) -> Ro
             SwaggerUi::new(base_path.to_string() + "/swagger-ui")
                 .url("/api-docs/openapi.json", openapi),
         )
-        .nest(base_path, auth::router())
+        .nest(base_path, auth::router(rate_limit_state))
         .nest(base_path, user::router(state.clone()))
         .nest(base_path, companies::router(state.clone()))
         .nest(base_path, dashboard::router(state.clone()))

@@ -1,64 +1,20 @@
+use crate::setup::database::initialize_database;
+use crate::setup::integrations;
+use crate::setup::integrations::{initialize_model_client, initialize_storage_client};
+use crate::setup::rate_limiting::initialize_rate_limiting;
+use crate::setup::redis::initialize_redis;
+use crate::setup::repositories::{initialize_adapters, initialize_repositories};
+use crate::setup::seed::{load_role_cache, seed_admin_user};
+use crate::setup::services::initialize_services;
 use anyhow::Result;
-use sea_orm::{ConnectOptions, Database, DatabaseConnection};
-use sea_orm_migration::MigratorTrait;
-use spl_application::services::feedback::status::FeedbackStatusService;
-use spl_application::services::feedback::FeedbackService;
-use spl_application::{
-    services,
-    services::{
-        auth::AuthService,
-        company::CompanyService,
-        diagnostics::{LabelService, MarkTypeService},
-        image::ImageService,
-        plot::PlotService,
-        recommendation::RecommendationService,
-        user::{role::RoleService, UserService},
-    },
-};
-use spl_domain::entities::user::User;
-use spl_domain::ports::auth::PasswordEncoder;
-use spl_domain::ports::integrations::{BlobStorageClient, ModelPredictionClient};
-use spl_domain::ports::repositories::crud::CrudRepository;
-use spl_domain::ports::repositories::user::{RoleRepository, UserRepository};
-use spl_infra::adapters::integrations::{
-    model_serving::{
-        mock::MockModelClient,
-        tensorflow::{TensorFlowServingClient, TensorFlowServingGrpcClient},
-    },
-    storage::{azure::AzureBlobClient, local::LocalFileSystemClient, mock::MockBlobClient},
-};
-use spl_infra::adapters::persistence::repositories::dashboard::DbDashboardSummaryRepository;
-use spl_infra::adapters::persistence::repositories::DbFeedbackStatusRepository;
-use spl_infra::adapters::{
-    auth::{jwt::JwtTokenGenerator, password::Argon2PasswordEncoder},
-    persistence::{
-        repositories,
-        repositories::{
-            company::DbCompanyRepository,
-            diagnostics::{
-                DbLabelRepository, DbMarkTypeRepository, DbPredictionMarkRepository,
-                DbPredictionRepository,
-            },
-            feedback::DbFeedbackRepository,
-            image::DbImageRepository,
-            plot::DbPlotRepository,
-            recommendation::DbRecommendationRepository,
-            user::{role::DbRoleRepository, DbUserRepository},
-        },
-    },
-    web::{router, state::AppState},
-};
-use spl_migration::Migrator;
-use spl_shared::adapters::rate_limiting::RateLimiter;
-use spl_shared::adapters::redis::create_redis_pool;
+use spl_infra::adapters::web::{router, state::AppState};
 use spl_shared::config::AppConfig;
-use spl_shared::http::middleware::rate_limit::RateLimitState;
 use spl_shared::telemetry::init_telemetry;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::time::Duration;
-use tracing::{error, info, warn};
-use uuid::Uuid;
+use tracing::info;
+
+mod setup;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -77,367 +33,65 @@ async fn main() -> Result<()> {
     );
 
     // 4. Initialize Database
-    let mut opt = ConnectOptions::new(config.database.url.clone());
-    opt.max_connections(config.database.max_connections.unwrap_or(20))
-        .min_connections(config.database.min_connections.unwrap_or(5))
-        .connect_timeout(Duration::from_secs(
-            config.database.connect_timeout.unwrap_or(10),
-        ))
-        .idle_timeout(Duration::from_secs(
-            config.database.idle_timeout.unwrap_or(300),
-        ))
-        .max_lifetime(Duration::from_secs(
-            config.database.max_lifetime.unwrap_or(1800),
-        ));
+    let db = initialize_database(&config.database).await?;
 
-    let db: DatabaseConnection = Database::connect(opt).await?;
-    info!("Connected to database: {}", config.database.url);
-
-    // 4.1 Run Migrations
-
-    Migrator::up(&db, None).await?;
-    info!("Migrations executed successfully.");
-
-    // 5. Initialize Adapters
-    let role_repo = Arc::new(DbRoleRepository::new(db.clone()));
-    let company_repo = Arc::new(DbCompanyRepository::new(db.clone()));
-    let user_repo = Arc::new(DbUserRepository::new(
-        db.clone(),
-        role_repo.clone(),
-        company_repo.clone(),
-    ));
-    let password_encoder = Arc::new(Argon2PasswordEncoder::new());
-    let token_generator = Arc::new(JwtTokenGenerator::new(config.clone()));
+    // 5. Initialize Repositories & Adapters
+    let repos = initialize_repositories(db);
+    let adapters = initialize_adapters(config.clone());
 
     // 5.1 Seed Admin User
     if let Some(admin_config) = &config.admin {
-        info!("Checking for Admin user seeding...");
-        match role_repo.get_by_name("admin").await {
-            Ok(Some(admin_role)) => {
-                match user_repo
-                    .get_by_username_and_company(&admin_config.username, None)
-                    .await
-                {
-                    Ok(None) => {
-                        info!("Admin user not found. Creating...");
-                        match password_encoder.hash(&admin_config.password) {
-                            Ok(hash) => {
-                                let new_admin = User {
-                                    id: Uuid::new_v4(),
-                                    username: admin_config.username.clone(),
-                                    email: Some(admin_config.email.clone()),
-                                    password_hash: hash,
-                                    name: None,
-                                    surname: None,
-                                    role: admin_role,
-                                    company: None,
-                                    created_at: chrono::Utc::now(),
-                                    updated_at: chrono::Utc::now(),
-                                };
-                                match user_repo.create(new_admin).await {
-                                    Ok(_) => info!("Admin user seeded successfully."),
-                                    Err(e) => error!("Failed to seed admin user: {}", e),
-                                }
-                            }
-                            Err(e) => error!("Failed to hash admin password: {}", e),
-                        }
-                    }
-                    Ok(Some(_)) => info!("Admin user already exists. Skipping."),
-                    Err(e) => error!("Failed to check for existing admin user: {}", e),
-                }
-            }
-            Ok(None) => error!("'Admin' role not found. Cannot seed admin user."),
-            Err(e) => error!("Failed to fetch 'Admin' role: {}", e),
-        }
+        seed_admin_user(
+            admin_config,
+            &repos.role_repo,
+            &repos.user_repo,
+            &adapters.password_encoder,
+        )
+        .await?;
     }
 
     // 6. Initialize Integration Clients
     info!("Initializing integration clients...");
+    let model_client = initialize_model_client(&config.integrations).await?;
+    let storage_client = initialize_storage_client(&config.integrations).await?;
 
-    // 6.1 Initialize Model Prediction Client
-    let model_client: Arc<dyn ModelPredictionClient> = match config
-        .integrations
-        .model_serving
-        .provider
-        .as_str()
-    {
-        "tensorflow" => {
-            info!("Using TensorFlow Serving for model predictions");
-            Arc::new(TensorFlowServingClient::new(
-                config.integrations.model_serving.url.clone(),
-                config.integrations.model_serving.model_name.clone(),
-                config.integrations.model_serving.timeout_seconds,
-                config.integrations.model_serving.image_size.unwrap_or(256),
-                config
-                    .integrations
-                    .model_serving
-                    .concurrency_limit
-                    .unwrap_or(10),
-            ))
-        }
-        "tensorflow_grpc" => {
-            info!("Using TensorFlow Serving with gRPC for model predictions");
-            Arc::new(TensorFlowServingGrpcClient::new(
-                config.integrations.model_serving.url.clone(),
-                config.integrations.model_serving.model_name.clone(),
-                None, // model_version opcional
-                config.integrations.model_serving.timeout_seconds,
-                config.integrations.model_serving.image_size.unwrap_or(256),
-                config
-                    .integrations
-                    .model_serving
-                    .concurrency_limit
-                    .unwrap_or(10),
-            )?)
-        }
-        "mock" => {
-            info!("Using Mock Model Client (development mode)");
-            Arc::new(MockModelClient::new())
-        }
-        provider => {
-            error!("Invalid model serving provider: {}", provider);
-            anyhow::bail!(
-                    "Invalid model serving provider: {}. Use 'tensorflow', 'tensorflow_grpc', or 'mock'",
-                    provider
-                );
-        }
-    };
+    // 6.1 Health Checks
+    integrations::health_checks(&model_client, &storage_client).await?;
 
-    // 6.2 Initialize Blob Storage Client
-    let storage_client: Arc<dyn BlobStorageClient> =
-        match config.integrations.storage.provider.as_str() {
-            "azure" => {
-                info!("Using Azure Blob Storage");
-                let conn_str = config
-                    .integrations
-                    .storage
-                    .connection_string
-                    .as_ref()
-                    .ok_or_else(|| anyhow::anyhow!("Azure connection string is required"))?;
-                let container = config
-                    .integrations
-                    .storage
-                    .container_name
-                    .as_ref()
-                    .ok_or_else(|| anyhow::anyhow!("Azure container name is required"))?;
-                Arc::new(AzureBlobClient::new(conn_str, container)?)
-            }
-            "local" => {
-                info!("Using Local Filesystem Storage");
-                let base_path = config
-                    .integrations
-                    .storage
-                    .local_base_path
-                    .clone()
-                    .unwrap_or_else(|| "/tmp/spl-blobs".to_string());
-                Arc::new(LocalFileSystemClient::new(base_path))
-            }
-            "mock" => {
-                info!("Using Mock Blob Storage (development mode)");
-                Arc::new(MockBlobClient::new())
-            }
-            provider => {
-                error!("Invalid storage provider: {}", provider);
-                anyhow::bail!(
-                    "Invalid storage provider: {}. Use 'azure', 'local', or 'mock'",
-                    provider
-                );
-            }
-        };
+    // 6.2 Initialize Redis (shared infrastructure for rate limiting, caching, etc.)
+    let redis_pool = initialize_redis(&config.redis).await;
 
-    // 6.3 Health Checks
-    info!("Running integration health checks...");
-    tokio::try_join!(model_client.health_check(), storage_client.health_check())?;
-    info!("All integrations healthy.");
-
-    // 6.4 Initialize Rate Limiting
-    let rate_limit_state = if let Some(rl_config) = &config.rate_limiting {
-        if rl_config.enabled {
-            // Check if Redis is configured
-            if let Some(redis_config) = &config.redis {
-                info!("Rate limiting enabled, initializing Redis connection...");
-                match create_redis_pool(redis_config).await {
-                    Ok(redis_pool) => {
-                        let limiter = RateLimiter::new(
-                            redis_pool,
-                            rl_config.window_seconds,
-                            rl_config.default_limit,
-                            rl_config.burst_size,
-                        );
-
-                        let global_behavior = rl_config
-                            .global_behavior
-                            .as_deref()
-                            .unwrap_or("allow")
-                            .into();
-
-                        let endpoint_behavior = rl_config
-                            .endpoint_behavior
-                            .as_deref()
-                            .unwrap_or("allow")
-                            .into();
-
-                        info!("Rate limiting initialized successfully");
-                        Arc::new(RateLimitState::new(
-                            limiter,
-                            true,
-                            rl_config.window_seconds,
-                            global_behavior,
-                            endpoint_behavior,
-                        ))
-                    }
-                    Err(e) => {
-                        error!("Failed to create Redis pool for rate limiting: {}", e);
-                        info!("Rate limiting will be disabled due to Redis connection error");
-                        Arc::new(RateLimitState::disabled())
-                    }
-                }
-            } else {
-                warn!("Rate limiting enabled but Redis is not configured. Rate limiting will be disabled.");
-                Arc::new(RateLimitState::disabled())
-            }
-        } else {
-            info!("Rate limiting is disabled in configuration");
-            Arc::new(RateLimitState::disabled())
-        }
-    } else {
-        Arc::new(RateLimitState::disabled())
-    };
+    // 6.3 Initialize Rate Limiting
+    let rate_limit_state = initialize_rate_limiting(&config, redis_pool);
 
     // 7. Initialize Services
-    let auth_service = Arc::new(AuthService::new(
-        user_repo.clone(),
-        password_encoder.clone(),
-        token_generator,
-    ));
-
-    let role_service = Arc::new(RoleService::new(role_repo.clone()));
-
-    let user_service = Arc::new(UserService::new(
-        user_repo.clone(),
-        role_repo.clone(),
-        company_repo.clone(),
-        password_encoder,
-    ));
-
-    let company_service = Arc::new(CompanyService::new(company_repo.clone()));
-
-    let recommendation_category_repo = Arc::new(
-        repositories::recommendation::DbCategoryRepository::new(db.clone()),
-    );
-    let recommendation_repo = Arc::new(DbRecommendationRepository::new(
-        db.clone(),
-        recommendation_category_repo.clone(),
-    ));
-
-    let recommendation_category_service = Arc::new(services::recommendation::CategoryService::new(
-        recommendation_category_repo,
-    ));
-    let recommendation_service = Arc::new(RecommendationService::new(
-        recommendation_repo,
-        recommendation_category_service.clone(),
-    ));
-
-    // 7.1 Initialize Diagnostics Services
-    let label_repo = Arc::new(DbLabelRepository::new(db.clone()));
-    let mark_type_repo = Arc::new(DbMarkTypeRepository::new(db.clone()));
-    let label_service = Arc::new(LabelService::new(label_repo.clone()));
-    let mark_type_service = Arc::new(MarkTypeService::new(mark_type_repo.clone()));
-
-    // 7.2 Initialize Image Service
-    let image_repo = Arc::new(DbImageRepository::new(db.clone()));
-    let image_service = Arc::new(ImageService::new(image_repo.clone()));
-    // 7.3 Initialize Prediction Service
-    let prediction_mark_repo = Arc::new(DbPredictionMarkRepository::new(
-        db.clone(),
-        mark_type_repo.clone(),
-    ));
-
-    // 7.6 Initialize Feedback Services
-    let feedback_status_repo = Arc::new(DbFeedbackStatusRepository::new(db.clone()));
-    let feedback_repo = Arc::new(DbFeedbackRepository::new(
-        db.clone(),
-        feedback_status_repo.clone(),
-        label_repo.clone(),
-    ));
-
-    // 7.4 Initialize Plot Service
-    let plot_repo = Arc::new(DbPlotRepository::new(db.clone()));
-    let prediction_repo = Arc::new(DbPredictionRepository::new(
-        db.clone(),
-        user_repo.clone(),
-        image_repo.clone(),
-        label_repo.clone(),
-        prediction_mark_repo.clone(),
-        feedback_repo.clone(),
-    ));
-
-    // 7.5 Initialize Access Control
-    let access_control_service = Arc::new(services::access_control::AccessControlService::new(
-        company_repo.clone(),
-        user_repo.clone(),
-    ));
-
-    let prediction_service = Arc::new(services::diagnostics::PredictionService::new(
-        prediction_repo.clone(),
-        user_repo.clone(),
-        image_repo.clone(),
-        label_repo.clone(),
-        prediction_mark_repo.clone(),
-        mark_type_repo.clone(),
-        storage_client.clone(),
+    let services = initialize_services(
+        &repos,
+        &adapters,
         model_client.clone(),
-        access_control_service.clone(),
-    ));
+        storage_client.clone(),
+    );
 
-    let plot_service = Arc::new(PlotService::new(
-        plot_repo.clone(),
-        prediction_repo.clone(),
-        access_control_service,
-    ));
+    // 8. Load Role Cache
+    let role_cache = load_role_cache(&repos.role_repo).await?;
 
-    // 7.7 Initialize Dashboard Service
-    let dashboard_repo = Arc::new(DbDashboardSummaryRepository::new(db.clone()));
-    let dashboard_service = Arc::new(services::dashboard::DashboardService::new(
-        dashboard_repo,
-        label_repo.clone(),
-        plot_repo.clone(),
-        user_repo.clone(),
-    ));
-
-    let feedback_status_service =
-        Arc::new(FeedbackStatusService::new(feedback_status_repo.clone()));
-    let feedback_service = Arc::new(FeedbackService::new(
-        feedback_repo,
-        feedback_status_repo.clone(),
-        label_repo.clone(),
-    ));
-
-    // 8. Initialize Web Router
-    info!("Loading role cache...");
-    let roles_list = role_repo.get_all().await?;
-    let mut role_cache = std::collections::HashMap::new();
-    for role in roles_list {
-        role_cache.insert(role.name, role.level);
-    }
-    info!("Role cache loaded with {} roles.", role_cache.len());
-
+    // 9. Initialize Web Router & State
     let app_state = Arc::new(AppState::new(
         config.clone(),
-        auth_service,
-        role_service,
-        user_service,
-        company_service,
-        image_service,
-        recommendation_category_service,
-        recommendation_service,
-        label_service,
-        mark_type_service,
-        prediction_service,
-        plot_service,
-        dashboard_service,
-        feedback_service,
-        feedback_status_service,
+        services.auth_service,
+        services.role_service,
+        services.user_service,
+        services.company_service,
+        services.image_service,
+        services.recommendation_category_service,
+        services.recommendation_service,
+        services.label_service,
+        services.mark_type_service,
+        services.prediction_service,
+        services.plot_service,
+        services.dashboard_service,
+        services.feedback_service,
+        services.feedback_status_service,
         role_cache,
         model_client,
         storage_client,
@@ -445,7 +99,7 @@ async fn main() -> Result<()> {
 
     let app = router(app_state, rate_limit_state);
 
-    // 8. Start Server
+    // 10. Start Server
     let addr: SocketAddr = format!("{}:{}", config.server.host, config.server.port)
         .parse()
         .expect("Invalid address");
