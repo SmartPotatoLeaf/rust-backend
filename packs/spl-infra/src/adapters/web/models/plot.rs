@@ -3,8 +3,6 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
 
-// ============ REQUEST MODELS ============
-
 /// Request to create a new plot
 #[derive(Debug, Deserialize, Validate, ToSchema)]
 pub struct CreatePlotRequest {
@@ -65,17 +63,25 @@ fn default_limit() -> u64 {
 /// Response for a single plot
 #[derive(Debug, Serialize, ToSchema, Clone, Deserialize)]
 pub struct PlotResponse {
+    /// Unique identifier of the plot
     pub id: Uuid,
+    /// Company ID that owns the plot
     pub company_id: Uuid,
+    /// Plot name
     pub name: String,
+    /// Plot description
     pub description: Option<String>,
+    /// Timestamp when the plot was created
     pub created_at: chrono::DateTime<chrono::Utc>,
+    /// Timestamp when the plot was last updated
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Debug, Serialize, ToSchema, Clone, Deserialize)]
 pub struct SimplifiedPlotResponse {
+    /// Unique identifier of the plot
     pub id: Uuid,
+    /// Plot name
     pub name: String,
 }
 
@@ -84,8 +90,11 @@ pub struct SimplifiedPlotResponse {
 pub struct DetailedPlotResponse {
     /// Plot ID (None for default/unassigned plot)
     pub id: Option<Uuid>,
+    /// Plot name
     pub name: String,
+    /// Plot description
     pub description: Option<String>,
+    /// Timestamp when the plot was created
     pub created_at: chrono::DateTime<chrono::Utc>,
     /// Total number of predictions
     pub total_diagnosis: i64,
@@ -98,14 +107,19 @@ pub struct DetailedPlotResponse {
 /// Paginated response for detailed plots
 #[derive(Debug, Serialize, ToSchema)]
 pub struct DetailedPlotsResponse {
+    /// Total number of plots
     pub total: i64,
+    /// Current page number
     pub page: u64,
+    /// Items per page
     pub limit: u64,
+    /// List of detailed plot records
     pub items: Vec<DetailedPlotResponse>,
 }
 
 /// Response for assign/unassign operations
 #[derive(Debug, Serialize, ToSchema)]
 pub struct AssignedPlotResponse {
+    /// List of prediction IDs that were assigned
     pub prediction_ids: Vec<Uuid>,
 }
