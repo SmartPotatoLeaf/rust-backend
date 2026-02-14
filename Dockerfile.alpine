@@ -11,7 +11,8 @@ RUN apk add --no-cache \
     pkgconfig \
     openssl-dev \
     openssl-libs-static \
-    libc-dev
+    libc-dev \
+    curl
 
 # Install cargo-chef
 RUN cargo install cargo-chef --locked
