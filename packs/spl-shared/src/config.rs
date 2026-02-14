@@ -8,6 +8,8 @@ pub struct AppConfig {
     pub database: DatabaseConfig,
     pub admin: Option<AdminConfig>,
     pub integrations: IntegrationsConfig,
+    pub redis: Option<RedisConfig>,
+    pub rate_limiting: Option<RateLimitingConfig>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -34,6 +36,18 @@ pub struct DatabaseConfig {
     pub connect_timeout: Option<u64>,
     pub idle_timeout: Option<u64>,
     pub max_lifetime: Option<u64>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct RedisConfig {
+    /// Redis connection URL (e.g., "redis://localhost:6379" or "redis://user:pass@host:6379/0")
+    pub url: String,
+    /// Connection pool size
+    pub pool_size: Option<u32>,
+    /// Connection timeout in seconds
+    pub connect_timeout: Option<u64>,
+    /// Command timeout in seconds
+    pub command_timeout: Option<u64>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -76,6 +90,24 @@ pub struct StorageConfig {
     pub container_name: Option<String>,
     /// Local filesystem base path (required for local provider)
     pub local_base_path: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct RateLimitingConfig {
+    /// Enable rate limiting globally
+    pub enabled: bool,
+    /// Default rate limit for all endpoints (requests per window)
+    pub default_limit: u64,
+    /// Time window in seconds (e.g., 60 for per-minute limits)
+    pub window_seconds: u64,
+    /// Burst capacity (allow short bursts)
+    pub burst_size: Option<u64>,
+    /// Behavior when global rate limiting is disabled: "allow" or "reject"
+    /// Default: "allow" (allows requests to continue)
+    pub global_behavior: Option<String>,
+    /// Behavior when endpoint-specific rate limiting is disabled: "allow" or "reject"
+    /// Default: "allow" (allows requests to continue)
+    pub endpoint_behavior: Option<String>,
 }
 
 impl AppConfig {

@@ -16,3 +16,6 @@ validator.workspace = true
 regex.workspace = true
 sea-orm.workspace = true
 utoipa.workspace = true
+redis.workspace = true
+bb8.workspace = true
+bb8-redis.workspace = true

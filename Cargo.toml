@@ -41,6 +41,11 @@ argon2 = "0.5"
 rand = "0.8"
 regex = "1.10"
 
+# Rate Limiting
+redis = { version = "0.25", features = ["tokio-comp", "connection-manager", "cluster"] }
+bb8 = "0.8"
+bb8-redis = "0.15"
+
 # Documentation
 utoipa = { version = "4.2", features = ["axum_extras", "uuid", "chrono"] }
 utoipa-swagger-ui = { version = "6.0", features = ["axum"] }
