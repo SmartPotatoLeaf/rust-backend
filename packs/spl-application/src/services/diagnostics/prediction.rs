@@ -1,5 +1,5 @@
-use crate::dtos::diagnostics::{CreatePredictionDto};
-use crate::mappers::diagnostics::prediction::{CreatePredictionContext};
+use crate::dtos::diagnostics::CreatePredictionDto;
+use crate::mappers::diagnostics::prediction::CreatePredictionContext;
 use crate::services::access_control::AccessControlService;
 
 use crate::dtos::diagnostics::FilterPredictionDto;
@@ -117,38 +117,47 @@ impl PredictionService {
             .await?
             .ok_or_else(|| AppError::Unknown("No label found for severity".into()))?;
 
-        // 6. Handle Masks
-        let mut marks = Vec::new();
         // Upload masks and create Mark entities
         // Legacy names: "leaf", "lt_blg_lesion"
         // Rust result: leaf_mask, lesion_mask
-        let mask_configs = vec![
-            ("leaf", result.leaf_mask, "leaf_mask"),
-            ("lt_blg_lesion", result.lesion_mask, "lt_blg_lesion_mask"),
-        ];
+        let leaf_mask_path = format!("{}/leaf_mask.jpg", filesdir);
+        let lesion_mask_path = format!("{}/lt_blg_lesion_mask.jpg", filesdir);
 
-        for (name, bytes, type_name) in mask_configs {
-            let mask_path = format!("{}/{}_mask.jpg", filesdir, name);
-            self.storage_client.upload(bytes, &mask_path).await?;
+        tokio::try_join!(
+            self.storage_client
+                .upload(result.leaf_mask, &leaf_mask_path),
+            self.storage_client
+                .upload(result.lesion_mask, &lesion_mask_path),
+        )?;
 
-            let mark_type = self
-                .mark_type_repo
-                .get_by_name(type_name)
-                // Fallback or error? Legacy raises BadRequest.
-                .await?
-                .ok_or_else(|| AppError::Unknown(format!("Mark type {} not found", type_name)))?;
+        let (leaf_type_opt, lesion_type_opt) = tokio::try_join!(
+            self.mark_type_repo.get_by_name("leaf_mask"),
+            self.mark_type_repo.get_by_name("lt_blg_lesion_mask"),
+        )?;
 
-            marks.push(PredictionMark {
-                id: Uuid::new_v4(),
-                data: serde_json::json!({
-                    "filepath": mask_path,
-                    "filename": format!("{}_mask.jpg", name)
-                }),
-                mark_type,
-                prediction_id: Uuid::nil(), // Will set later
-                created_at: chrono::Utc::now(),
-            });
-        }
+        let leaf_type = leaf_type_opt
+            .ok_or_else(|| AppError::Unknown("Mark type leaf_mask not found".to_string()))?;
+
+        let lesion_type = lesion_type_opt.ok_or_else(|| {
+            AppError::Unknown("Mark type lt_blg_lesion_mask not found".to_string())
+        })?;
+
+        let marks = vec![
+            (leaf_type, "leaf", leaf_mask_path),
+            (lesion_type, "lt_blg_lesion", lesion_mask_path),
+        ]
+        .iter()
+        .map(|(tp, name, path)| PredictionMark {
+            id: Uuid::new_v4(),
+            data: serde_json::json!({
+                "filepath": path,
+                "filename": format!("{}_mask.jpg", name),
+            }),
+            mark_type: tp.clone(),
+            prediction_id: Uuid::nil(), // Will set later
+            created_at: chrono::Utc::now(),
+        })
+        .collect::<Vec<_>>();
 
         // 7. Save Image Entity
         let image = Image {
@@ -184,8 +193,6 @@ impl PredictionService {
         let mut image = image;
         image.prediction_id = Some(prediction.id);
 
-        self.image_repo.update(image.clone()).await?;
-
         // 10. Update Marks with prediction_id and Save
         let marks: Vec<PredictionMark> = marks
             .into_iter()
@@ -195,7 +202,10 @@ impl PredictionService {
             })
             .collect();
 
-        self.mark_repo.create_many(marks.clone()).await?;
+        tokio::try_join!(
+            self.image_repo.update(image.clone()),
+            self.mark_repo.create_many(marks.clone())
+        )?;
 
         prediction.image = image; // Update prediction with image that now has prediction_id
         prediction.marks = marks; // Add marks to prediction

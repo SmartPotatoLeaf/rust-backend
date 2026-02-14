@@ -243,8 +243,7 @@ async fn main() -> Result<()> {
 
     // 6.3 Health Checks
     info!("Running integration health checks...");
-    model_client.health_check().await?;
-    storage_client.health_check().await?;
+    tokio::try_join!(model_client.health_check(), storage_client.health_check())?;
     info!("All integrations healthy.");
 
     // 7. Initialize Services
