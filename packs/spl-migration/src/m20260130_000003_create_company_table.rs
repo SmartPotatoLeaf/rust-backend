@@ -76,10 +76,51 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
+        // 3b. Add Index on company_id for multi-tenant queries
+        manager
+            .create_index(
+                Index::create()
+                    .table(Users::Table)
+                    .name("idx_users_company_id")
+                    .col(Users::CompanyId)
+                    .to_owned(),
+            )
+            .await?;
+
+        // 3c. Add Index on role_id for permission queries
+        manager
+            .create_index(
+                Index::create()
+                    .table(Users::Table)
+                    .name("idx_users_role_id")
+                    .col(Users::RoleId)
+                    .to_owned(),
+            )
+            .await?;
+
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        // Drop Indexes
+        manager
+            .drop_index(
+                Index::drop()
+                    .name("idx_users_role_id")
+                    .table(Users::Table)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .drop_index(
+                Index::drop()
+                    .name("idx_users_company_id")
+                    .table(Users::Table)
+                    .to_owned(),
+            )
+            .await?;
+
         // Drop Index
         manager
             .drop_index(
@@ -125,4 +166,5 @@ enum Users {
     Table,
     CompanyId,
     Username,
+    RoleId,
 }

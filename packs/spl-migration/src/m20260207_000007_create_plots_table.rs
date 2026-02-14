@@ -40,13 +40,14 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
-        // 2. Create Index on company_id for query performance
+        // 2. Create composite index on (company_id, created_at DESC) for optimized queries
         manager
             .create_index(
                 Index::create()
                     .table(Plots::Table)
-                    .name("idx_plots_company_id")
+                    .name("idx_plots_company_created")
                     .col(Plots::CompanyId)
+                    .col((Plots::CreatedAt, IndexOrder::Desc))
                     .to_owned(),
             )
             .await?;
@@ -103,7 +104,7 @@ impl MigrationTrait for Migration {
         manager
             .drop_index(
                 Index::drop()
-                    .name("idx_plots_company_id")
+                    .name("idx_plots_company_created")
                     .table(Plots::Table)
                     .to_owned(),
             )

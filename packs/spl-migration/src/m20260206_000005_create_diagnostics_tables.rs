@@ -206,6 +206,86 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
+        // 6b. Create Index on labels severity range (min, max, weight)
+        manager
+            .create_index(
+                Index::create()
+                    .table(Labels::Table)
+                    .name("idx_labels_severity_range")
+                    .col(Labels::Min)
+                    .col(Labels::Max)
+                    .col(Labels::Weight)
+                    .to_owned(),
+            )
+            .await?;
+
+        // 6c. Create composite index on predictions (user_id, created_at DESC)
+        manager
+            .create_index(
+                Index::create()
+                    .table(Predictions::Table)
+                    .name("idx_predictions_user_created")
+                    .col(Predictions::UserId)
+                    .col((Predictions::CreatedAt, IndexOrder::Desc))
+                    .to_owned(),
+            )
+            .await?;
+
+        // 6d. Create index on predictions.image_id
+        manager
+            .create_index(
+                Index::create()
+                    .table(Predictions::Table)
+                    .name("idx_predictions_image_id")
+                    .col(Predictions::ImageId)
+                    .to_owned(),
+            )
+            .await?;
+
+        // 6e. Create index on predictions.label_id
+        manager
+            .create_index(
+                Index::create()
+                    .table(Predictions::Table)
+                    .name("idx_predictions_label_id")
+                    .col(Predictions::LabelId)
+                    .to_owned(),
+            )
+            .await?;
+
+        // 6f. Create composite index for dashboard queries (user_id, label_id, created_at DESC)
+        manager
+            .create_index(
+                Index::create()
+                    .table(Predictions::Table)
+                    .name("idx_predictions_user_label_date")
+                    .col(Predictions::UserId)
+                    .col(Predictions::LabelId)
+                    .col((Predictions::CreatedAt, IndexOrder::Desc))
+                    .to_owned(),
+            )
+            .await?;
+
+        // 6g. Create partial index for unassigned predictions (WHERE plot_id IS NULL)
+        let sql_partial_index = r#"
+            CREATE INDEX idx_predictions_unassigned_user 
+            ON predictions(user_id) 
+            WHERE plot_id IS NULL
+        "#;
+        manager.get_connection().execute_unprepared(sql_partial_index).await?;
+
+        // 6h. Create composite index on prediction_marks (prediction_id, mark_type_id)
+        manager
+            .create_index(
+                Index::create()
+                    .table(PredictionMarks::Table)
+                    .name("idx_prediction_marks_pred_type")
+                    .col(PredictionMarks::PredictionId)
+                    .col(PredictionMarks::MarkTypeId)
+                    .to_owned(),
+            )
+            .await?;
+
         // 7. Insert Default Labels
         let insert_labels = Query::insert()
             .into_table(Labels::Table)
@@ -271,10 +351,100 @@ impl MigrationTrait for Migration {
 
         manager.exec_stmt(insert_mark_types).await?;
 
+        // 9. Add CHECK constraints for data validation
+        let check_constraints = vec![
+            r#"ALTER TABLE labels ADD CONSTRAINT chk_labels_severity_range 
+               CHECK (min >= 0 AND max <= 100 AND min <= max)"#,
+            r#"ALTER TABLE predictions ADD CONSTRAINT chk_predictions_severity_range 
+               CHECK (severity >= 0 AND severity <= 100)"#,
+            r#"ALTER TABLE predictions ADD CONSTRAINT chk_predictions_confidence_range 
+               CHECK (presence_confidence >= 0 AND presence_confidence <= 1 
+                  AND absence_confidence >= 0 AND absence_confidence <= 1)"#,
+        ];
+
+        for sql in check_constraints {
+            manager.get_connection().execute_unprepared(sql).await?;
+        }
+
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        // Drop CHECK constraints
+        let drop_constraints = vec![
+            "ALTER TABLE predictions DROP CONSTRAINT IF EXISTS chk_predictions_confidence_range",
+            "ALTER TABLE predictions DROP CONSTRAINT IF EXISTS chk_predictions_severity_range",
+            "ALTER TABLE labels DROP CONSTRAINT IF EXISTS chk_labels_severity_range",
+        ];
+
+        for sql in drop_constraints {
+            manager.get_connection().execute_unprepared(sql).await?;
+        }
+
+        // Drop new indexes
+        manager
+            .drop_index(
+                Index::drop()
+                    .name("idx_prediction_marks_pred_type")
+                    .table(PredictionMarks::Table)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .drop_index(
+                Index::drop()
+                    .name("idx_predictions_unassigned_user")
+                    .table(Predictions::Table)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .drop_index(
+                Index::drop()
+                    .name("idx_predictions_user_label_date")
+                    .table(Predictions::Table)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .drop_index(
+                Index::drop()
+                    .name("idx_predictions_label_id")
+                    .table(Predictions::Table)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .drop_index(
+                Index::drop()
+                    .name("idx_predictions_image_id")
+                    .table(Predictions::Table)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .drop_index(
+                Index::drop()
+                    .name("idx_predictions_user_created")
+                    .table(Predictions::Table)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .drop_index(
+                Index::drop()
+                    .name("idx_labels_severity_range")
+                    .table(Labels::Table)
+                    .to_owned(),
+            )
+            .await?;
+
         // Drop Indexes
         manager
             .drop_index(

@@ -130,6 +130,18 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
+        // 4b. Create composite index (status_id, prediction_id) for admin queries
+        manager
+            .create_index(
+                Index::create()
+                    .table(Feedbacks::Table)
+                    .name("idx_feedbacks_status_prediction")
+                    .col(Feedbacks::StatusId)
+                    .col(Feedbacks::PredictionId)
+                    .to_owned(),
+            )
+            .await?;
+
         // 5. Insert Default Feedback Statuses
         let insert = Query::insert()
             .into_table(FeedbackStatus::Table)
@@ -155,6 +167,15 @@ impl MigrationTrait for Migration {
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         // Drop Indexes
+        manager
+            .drop_index(
+                Index::drop()
+                    .name("idx_feedbacks_status_prediction")
+                    .table(Feedbacks::Table)
+                    .to_owned(),
+            )
+            .await?;
+
         manager
             .drop_index(
                 Index::drop()

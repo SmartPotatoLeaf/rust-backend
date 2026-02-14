@@ -53,10 +53,40 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
+        // Add Index on prediction_id for bidirectional navigation
+        manager
+            .create_index(
+                Index::create()
+                    .table(Images::Table)
+                    .name("idx_images_prediction_id")
+                    .col(Images::PredictionId)
+                    .to_owned(),
+            )
+            .await?;
+
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        // Drop indexes
+        manager
+            .drop_index(
+                Index::drop()
+                    .name("idx_images_prediction_id")
+                    .table(Images::Table)
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .drop_index(
+                Index::drop()
+                    .name("idx_images_user_id")
+                    .table(Images::Table)
+                    .to_owned(),
+            )
+            .await?;
+
         manager
             .drop_table(Table::drop().table(Images::Table).to_owned())
             .await

@@ -112,6 +112,19 @@ impl MigrationTrait for Migration {
             )
             .await?;
 
+        // 3b. Create composite index for severity range queries
+        manager
+            .create_index(
+                Index::create()
+                    .table(Recommendations::Table)
+                    .name("idx_recommendations_severity_range")
+                    .col(Recommendations::MinSeverity)
+                    .col(Recommendations::MaxSeverity)
+                    .col(Recommendations::CategoryId)
+                    .to_owned(),
+            )
+            .await?;
+
         // 4. Insert Default Recommendation Categories
         let insert = Query::insert()
             .into_table(RecommendationCategories::Table)
@@ -143,11 +156,29 @@ impl MigrationTrait for Migration {
 
         manager.exec_stmt(insert).await?;
 
+        // 5. Add CHECK constraint for severity range validation
+        let check_constraint = r#"ALTER TABLE recommendations ADD CONSTRAINT chk_recommendations_severity_range 
+               CHECK (min_severity >= 0 AND max_severity <= 100 AND min_severity <= max_severity)"#;
+        manager.get_connection().execute_unprepared(check_constraint).await?;
+
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        // Drop CHECK constraint
+        let drop_constraint = "ALTER TABLE recommendations DROP CONSTRAINT IF EXISTS chk_recommendations_severity_range";
+        manager.get_connection().execute_unprepared(drop_constraint).await?;
+
         // Drop Index
+        manager
+            .drop_index(
+                Index::drop()
+                    .name("idx_recommendations_severity_range")
+                    .table(Recommendations::Table)
+                    .to_owned(),
+            )
+            .await?;
+
         manager
             .drop_index(
                 Index::drop()
