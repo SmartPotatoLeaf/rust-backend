@@ -1,0 +1,32 @@
+location: westus
+name: spl-rest-api
+properties:
+  configuration:
+    activeRevisionsMode: Single
+    ingress:
+      allowInsecure: false
+      external: true
+      targetPort: 8080
+      traffic:
+        - latestRevision: true
+          weight: 100
+      transport: http
+  managedEnvironmentId: <env id>
+  template:
+    containers:
+      - image: yoimerdr/spl-backend-rust:1.1.0-alpine
+        name: spl-backend-rust
+        resources:
+          cpu: 2.0
+          memory: 4.0Gi
+    scale:
+      maxReplicas: 5
+      minReplicas: 0
+      rules:
+        - name: http-scale
+          http:
+            metadata:
+              concurrentRequests: "10"
+  workloadProfileName: Consumption
+resourceGroup: spl
+type: Microsoft.App/containerApps
