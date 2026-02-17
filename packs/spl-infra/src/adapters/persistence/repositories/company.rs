@@ -36,4 +36,9 @@ impl CrudRepository<Company, Uuid> for DbCompanyRepository {
     }
 }
 
-impl CompanyRepository for DbCompanyRepository {}
+#[async_trait::async_trait]
+impl CompanyRepository for DbCompanyRepository {
+    async fn get_all(&self) -> Result<Vec<Company>> {
+        crud::get_all::<company::Entity, Company>(&self.db).await
+    }
+}

@@ -1,4 +1,4 @@
-use crate::dtos::user::{CreateUserDto, UpdateUserDto};
+use crate::dtos::user::{ChangePasswordDto, CreateUserDto, UpdateProfileDto, UpdateUserDto};
 use crate::mappers::user::{UserCreationContext, UserUpdateContext};
 use spl_domain::entities::user::User;
 use spl_domain::ports::auth::PasswordEncoder;
@@ -9,11 +9,14 @@ use spl_shared::traits::IntoWithContext;
 use std::sync::Arc;
 use uuid::Uuid;
 
+use crate::services::access_control::AccessControlService;
+
 pub struct UserService {
     user_repo: Arc<dyn UserRepository>,
     role_repo: Arc<dyn RoleRepository>,
     company_repo: Arc<dyn CompanyRepository>,
     password_encoder: Arc<dyn PasswordEncoder>,
+    access_control: Arc<AccessControlService>,
 }
 
 impl UserService {
@@ -22,12 +25,14 @@ impl UserService {
         role_repo: Arc<dyn RoleRepository>,
         company_repo: Arc<dyn CompanyRepository>,
         password_encoder: Arc<dyn PasswordEncoder>,
+        access_control: Arc<AccessControlService>,
     ) -> Self {
         Self {
             user_repo,
             role_repo,
             company_repo,
             password_encoder,
+            access_control,
         }
     }
 
@@ -288,5 +293,36 @@ impl UserService {
         }
 
         self.user_repo.delete(target_id).await
+    }
+
+    pub async fn get_by_company(&self, requester: &User, company_id: Uuid) -> Result<Vec<User>> {
+        self.access_control
+            .validate_company_management_access(requester, company_id)?;
+
+        self.user_repo.get_by_company_id(company_id).await
+    }
+
+    pub async fn update_profile(&self, user: &User, dto: UpdateProfileDto) -> Result<User> {
+        let updated = dto.into_with_context(user.clone())?;
+
+        self.user_repo.update(updated).await
+    }
+
+    pub async fn change_password(&self, user: &User, dto: ChangePasswordDto) -> Result<User> {
+        // Verify current password
+        if !self
+            .password_encoder
+            .verify(&dto.current_password, &user.password_hash)?
+        {
+            return Err(AppError::InvalidCredentials);
+        }
+
+        let new_hash = self.password_encoder.hash(&dto.new_password)?;
+
+        let mut updated = user.clone();
+        updated.password_hash = new_hash;
+        updated.updated_at = chrono::Utc::now();
+
+        self.user_repo.update(updated).await
     }
 }

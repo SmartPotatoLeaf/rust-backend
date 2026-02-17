@@ -1,4 +1,5 @@
 use crate::dtos::company::{CreateCompanyDto, UpdateCompanyDto};
+use crate::services::access_control::AccessControlService;
 
 use spl_domain::entities::company::Company;
 use spl_domain::entities::user::User;
@@ -10,11 +11,18 @@ use uuid::Uuid;
 
 pub struct CompanyService {
     company_repo: Arc<dyn CompanyRepository>,
+    access_control: Arc<AccessControlService>,
 }
 
 impl CompanyService {
-    pub fn new(company_repo: Arc<dyn CompanyRepository>) -> Self {
-        Self { company_repo }
+    pub fn new(
+        company_repo: Arc<dyn CompanyRepository>,
+        access_control: Arc<AccessControlService>,
+    ) -> Self {
+        Self {
+            company_repo,
+            access_control,
+        }
     }
 
     pub async fn create(&self, creator: &User, dto: CreateCompanyDto) -> Result<Company> {
@@ -24,6 +32,17 @@ impl CompanyService {
         }
 
         self.company_repo.create(dto.into()).await
+    }
+
+    pub async fn get_all_public(&self) -> Result<Vec<Company>> {
+        self.company_repo.get_all().await
+    }
+
+    pub async fn get_all(&self, requester: &User) -> Result<Vec<Company>> {
+        if requester.role.level < 100 {
+            return Err(AppError::Forbidden);
+        }
+        self.company_repo.get_all().await
     }
 
     pub async fn get_by_id(&self, requester: &User, id: Uuid) -> Result<Option<Company>> {
@@ -48,20 +67,8 @@ impl CompanyService {
         id: Uuid,
         dto: UpdateCompanyDto,
     ) -> Result<Company> {
-        let role_level = requester.role.level;
-
-        if role_level >= 100 {
-            // Admin allowed
-        } else if role_level >= 50 {
-            // Supervisor check
-            let user_company_id = requester.company.as_ref().map(|c| c.id);
-            if user_company_id != Some(id) {
-                return Err(AppError::Forbidden);
-            }
-        } else {
-            // User forbidden
-            return Err(AppError::Forbidden);
-        }
+        self.access_control
+            .validate_company_management_access(requester, id)?;
 
         let current = self
             .company_repo

@@ -1,4 +1,4 @@
-use crate::dtos::user::{CreateUserDto, UpdateUserDto};
+use crate::dtos::user::{CreateUserDto, UpdateProfileDto, UpdateUserDto};
 use chrono::Utc;
 use spl_domain::entities::company::Company;
 use spl_domain::entities::user::{Role, User};
@@ -31,6 +31,24 @@ impl IntoWithContext<User, UserCreationContext> for CreateUserDto {
     }
 }
 
+impl IntoWithContext<User, User> for UpdateProfileDto {
+    type Error = AppError;
+
+    fn into_with_context(self, current: User) -> Result<User> {
+        Ok(User {
+            id: current.id,
+            username: current.username,
+            email: self.email.or(current.email),
+            password_hash: current.password_hash,
+            name: self.name.or(current.name),
+            surname: self.surname.or(current.surname),
+            role: current.role,
+            company: current.company,
+            created_at: current.created_at,
+            updated_at: Utc::now(),
+        })
+    }
+}
 pub struct UserUpdateContext {
     pub current_user: User,
     pub password_hash: Option<String>,
@@ -43,7 +61,7 @@ impl IntoWithContext<User, UserUpdateContext> for UpdateUserDto {
 
     fn into_with_context(self, context: UserUpdateContext) -> Result<User> {
         let current = context.current_user;
-        
+
         Ok(User {
             id: current.id,
             username: self.username.unwrap_or(current.username),
@@ -62,4 +80,3 @@ impl IntoWithContext<User, UserUpdateContext> for UpdateUserDto {
         })
     }
 }
-

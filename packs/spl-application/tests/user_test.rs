@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use mockall::mock;
 use mockall::predicate::*;
 use spl_application::dtos::user::CreateUserDto;
+use spl_application::services::access_control::AccessControlService;
 use spl_application::services::user::UserService;
 use spl_domain::entities::company::Company;
 use spl_domain::entities::user::{Role, User};
@@ -70,7 +71,9 @@ mock! {
         async fn delete(&self, id: Uuid) -> Result<Company>;
     }
     #[async_trait]
-    impl CompanyRepository for CompanyRepository {}
+    impl CompanyRepository for CompanyRepository {
+        async fn get_all(&self) -> Result<Vec<Company>>;
+    }
 }
 
 #[tokio::test]
@@ -210,11 +213,19 @@ async fn test_create_user_admin_creates_admin_success() {
         .expect_hash()
         .returning(|_| Ok("hashed".to_string()));
 
+    let mock_repo = Arc::new(mock_repo);
+    let mock_company_repo = Arc::new(mock_company_repo);
+    let access_control = Arc::new(AccessControlService::new(
+        mock_company_repo.clone(),
+        mock_repo.clone(),
+    ));
+
     let service = UserService::new(
-        Arc::new(mock_repo),
+        mock_repo,
         Arc::new(mock_role_repo),
-        Arc::new(mock_company_repo),
+        mock_company_repo,
         Arc::new(mock_encoder),
+        access_control,
     );
 
     let dto = CreateUserDto {
@@ -344,11 +355,19 @@ async fn test_create_user_supervisor_creates_user_success() {
         .expect_hash()
         .returning(|_| Ok("hashed".to_string()));
 
+    let mock_repo = Arc::new(mock_repo);
+    let mock_company_repo = Arc::new(mock_company_repo);
+    let access_control = Arc::new(AccessControlService::new(
+        mock_company_repo.clone(),
+        mock_repo.clone(),
+    ));
+
     let service = UserService::new(
-        Arc::new(mock_repo),
+        mock_repo,
         Arc::new(mock_role_repo),
-        Arc::new(mock_company_repo),
+        mock_company_repo,
         Arc::new(mock_encoder),
+        access_control,
     );
 
     let dto = CreateUserDto {

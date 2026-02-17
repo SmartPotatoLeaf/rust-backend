@@ -2,27 +2,30 @@ use crate::adapters::web::middleware::auth::AuthUser;
 use crate::adapters::web::middleware::permissions::{
     permission_check, RequiredRoles, RoleValidation,
 };
-use crate::adapters::web::models::feedback::status::{CreateFeedbackStatusRequest, FeedbackStatusResponse, SimplifiedFeedbackStatusResponse, UpdateFeedbackStatusRequest};
+use crate::adapters::web::models::common::SimplifiedQuery;
+use crate::adapters::web::models::feedback::status::{
+    CreateFeedbackStatusRequest, FeedbackStatusResponse, SimplifiedFeedbackStatusResponse,
+    UpdateFeedbackStatusRequest,
+};
 use crate::adapters::web::state::AppState;
+use axum::extract::Query;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
     middleware,
     response::IntoResponse,
-    routing::get,
+    routing::{get, post, put},
     Extension, Json, Router,
 };
 use spl_shared::error::Result;
 use spl_shared::http::extractor::ValidatedJson;
 use spl_shared::http::responses::{ok_if_or_not_found, ok_iter_if_or_not_found, StatusResponse};
 use std::sync::Arc;
-use axum::extract::Query;
 use utoipa::OpenApi;
-use crate::adapters::web::models::common::SimplifiedQuery;
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(get_all, get_by_id, create, update, delete_status),
+    paths(get_all_feedback_statuses, get_feedback_status_by_id, create_feedback_status, update_feedback_status, delete_status),
     components(schemas(
         CreateFeedbackStatusRequest,
         UpdateFeedbackStatusRequest,
@@ -42,15 +45,21 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
         RoleValidation::Higher,
     ));
 
-    Router::new()
-        .route("/feedback/statuses", get(get_all).post(create))
-        .route(
-            "/feedback/statuses/{id}",
-            get(get_by_id).put(update).delete(delete_status),
-        )
+    let admin_router = Router::new()
+        .route("/feedback/statuses", post(create_feedback_status))
+        .route("/feedback/statuses/{id}", put(update_feedback_status).delete(delete_status))
         .route_layer(admin_only_layer)
         .route_layer(admin_extension_roles)
-        .with_state(state)
+        .with_state(state.clone());
+
+    let authenticated_router = Router::new()
+        .route("/feedback/statuses", get(get_all_feedback_statuses))
+        .route("/feedback/statuses/{id}", get(get_feedback_status_by_id))
+        .with_state(state);
+
+    Router::new()
+        .merge(authenticated_router)
+        .merge(admin_router)
 }
 
 #[utoipa::path(
@@ -68,7 +77,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
     security(("jwt_auth" = [])),
     tag = "feedback_status"
 )]
-async fn get_all(
+async fn get_all_feedback_statuses(
     State(state): State<Arc<AppState>>,
     _user: AuthUser,
     Query(query): Query<SimplifiedQuery>,
@@ -101,7 +110,7 @@ async fn get_all(
     security(("jwt_auth" = [])),
     tag = "feedback_status"
 )]
-async fn get_by_id(
+async fn get_feedback_status_by_id(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
     _user: AuthUser,
@@ -132,13 +141,16 @@ async fn get_by_id(
     security(("jwt_auth" = [])),
     tag = "feedback_status"
 )]
-async fn create(
+async fn create_feedback_status(
     State(state): State<Arc<AppState>>,
     _user: AuthUser,
     ValidatedJson(payload): ValidatedJson<CreateFeedbackStatusRequest>,
 ) -> Result<impl IntoResponse> {
     let created = state.feedback_status_service.create(payload.into()).await?;
-    Ok((StatusCode::CREATED, Json(FeedbackStatusResponse::from(created))))
+    Ok((
+        StatusCode::CREATED,
+        Json(FeedbackStatusResponse::from(created)),
+    ))
 }
 
 #[utoipa::path(
@@ -159,13 +171,16 @@ async fn create(
     security(("jwt_auth" = [])),
     tag = "feedback_status"
 )]
-async fn update(
+async fn update_feedback_status(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
     _user: AuthUser,
     ValidatedJson(payload): ValidatedJson<UpdateFeedbackStatusRequest>,
 ) -> Result<impl IntoResponse> {
-    let _ = state.feedback_status_service.update(id, payload.into()).await?;
+    let _ = state
+        .feedback_status_service
+        .update(id, payload.into())
+        .await?;
     Ok((
         StatusCode::OK,
         Json(StatusResponse {

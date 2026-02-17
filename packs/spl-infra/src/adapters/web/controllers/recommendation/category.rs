@@ -36,7 +36,7 @@ enum RecommendationCategoryOrSimplifiedResponse {
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(get_all, get_by_id, create, update, delete_type),
+    paths(get_all_recommendation_categories, get_recommendation_category_by_id, create_recommendation_category, update_recommendation_category, delete_recommendation_category),
     components(schemas(
         CreateRecommendationCategoryRequest,
         UpdateRecommendationCategoryRequest,
@@ -58,18 +58,18 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
     ));
 
     let admin_router = Router::new()
-        .route("/recommendation/categories", post(create))
+        .route("/recommendation/categories", post(create_recommendation_category))
         .route(
             "/recommendation/categories/{id}",
-            delete(delete_type).put(update),
+            delete(delete_recommendation_category).put(update_recommendation_category),
         )
         .route_layer(admin_only_layer)
         .route_layer(admin_extension_roles)
         .with_state(state.clone());
 
     let public_router = Router::new()
-        .route("/recommendation/categories", get(get_all))
-        .route("/recommendation/categories/{id}", get(get_by_id))
+        .route("/recommendation/categories", get(get_all_recommendation_categories))
+        .route("/recommendation/categories/{id}", get(get_recommendation_category_by_id))
         .with_state(state);
 
     Router::new().merge(public_router).merge(admin_router)
@@ -90,7 +90,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
     security(("jwt_auth" = [])),
     tag = "recommendation_categories"
 )]
-async fn get_all(
+async fn get_all_recommendation_categories(
     State(state): State<Arc<AppState>>,
     Query(query): Query<SimplifiedQuery>,
     _user: AuthUser,
@@ -122,7 +122,7 @@ async fn get_all(
     security(("jwt_auth" = [])),
     tag = "recommendation_categories"
 )]
-async fn get_by_id(
+async fn get_recommendation_category_by_id(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
     Query(query): Query<SimplifiedQuery>,
@@ -152,7 +152,7 @@ async fn get_by_id(
     security(("jwt_auth" = [])),
     tag = "recommendation_categories"
 )]
-async fn create(
+async fn create_recommendation_category(
     State(state): State<Arc<AppState>>,
     _user: AuthUser,
     ValidatedJson(payload): ValidatedJson<CreateRecommendationCategoryRequest>,
@@ -185,7 +185,7 @@ async fn create(
     security(("jwt_auth" = [])),
     tag = "recommendation_categories"
 )]
-async fn update(
+async fn update_recommendation_category(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
     _user: AuthUser,
@@ -222,7 +222,7 @@ async fn update(
     security(("jwt_auth" = [])),
     tag = "recommendation_categories"
 )]
-async fn delete_type(
+async fn delete_recommendation_category(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
     _user: AuthUser,

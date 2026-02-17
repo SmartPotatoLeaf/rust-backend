@@ -45,14 +45,23 @@ pub fn initialize_services(
 
     let role_service = Arc::new(RoleService::new(repos.role_repo.clone()));
 
+    let access_control_service = Arc::new(services::access_control::AccessControlService::new(
+        repos.company_repo.clone(),
+        repos.user_repo.clone(),
+    ));
+
     let user_service = Arc::new(UserService::new(
         repos.user_repo.clone(),
         repos.role_repo.clone(),
         repos.company_repo.clone(),
         adapters.password_encoder.clone(),
+        access_control_service.clone(),
     ));
 
-    let company_service = Arc::new(CompanyService::new(repos.company_repo.clone()));
+    let company_service = Arc::new(CompanyService::new(
+        repos.company_repo.clone(),
+        access_control_service.clone(),
+    ));
 
     let recommendation_category_service = Arc::new(services::recommendation::CategoryService::new(
         repos.recommendation_category_repo.clone(),
@@ -66,11 +75,6 @@ pub fn initialize_services(
     let label_service = Arc::new(LabelService::new(repos.label_repo.clone()));
     let mark_type_service = Arc::new(MarkTypeService::new(repos.mark_type_repo.clone()));
     let image_service = Arc::new(ImageService::new(repos.image_repo.clone()));
-
-    let access_control_service = Arc::new(services::access_control::AccessControlService::new(
-        repos.company_repo.clone(),
-        repos.user_repo.clone(),
-    ));
 
     let prediction_service = Arc::new(services::diagnostics::PredictionService::new(
         repos.prediction_repo.clone(),
@@ -97,8 +101,9 @@ pub fn initialize_services(
         repos.user_repo.clone(),
     ));
 
-    let feedback_status_service =
-        Arc::new(FeedbackStatusService::new(repos.feedback_status_repo.clone()));
+    let feedback_status_service = Arc::new(FeedbackStatusService::new(
+        repos.feedback_status_repo.clone(),
+    ));
 
     let feedback_service = Arc::new(FeedbackService::new(
         repos.feedback_repo.clone(),
