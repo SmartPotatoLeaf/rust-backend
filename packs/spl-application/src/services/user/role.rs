@@ -19,4 +19,8 @@ impl RoleService {
     pub async fn get_by_name(&self, name: &str) -> Result<Option<Role>> {
         self.repo.get_by_name(name).await
     }
+
+    pub async fn get_all(&self) -> Result<Vec<Role>> {
+        self.repo.get_all().await
+    }
 }

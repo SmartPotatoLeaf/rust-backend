@@ -31,3 +31,15 @@ pub struct LoginDto {
     pub company_id: Option<Uuid>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateProfileDto {
+    pub name: Option<String>,
+    pub surname: Option<String>,
+    pub email: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChangePasswordDto {
+    pub current_password: String,
+    pub new_password: String,
+}

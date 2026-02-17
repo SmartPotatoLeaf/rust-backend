@@ -1,8 +1,11 @@
 use async_trait::async_trait;
-use chrono::Utc;
 use chrono::DateTime;
+use chrono::Utc;
 use mockall::mock;
+use spl_domain::entities::dashboard::DashboardSummary;
 use spl_domain::entities::diagnostics::{MarkType, Prediction, PredictionMark};
+use spl_domain::entities::feedback::Feedback;
+use spl_domain::entities::plot::Plot;
 use spl_domain::ports::auth::{PasswordEncoder, TokenGenerator};
 use spl_domain::ports::{
     repositories,
@@ -23,9 +26,6 @@ use spl_domain::{
 };
 use spl_shared::error::Result;
 use uuid::Uuid;
-use spl_domain::entities::dashboard::DashboardSummary;
-use spl_domain::entities::feedback::Feedback;
-use spl_domain::entities::plot::Plot;
 
 mock! {
     pub UserRepository {}
@@ -87,7 +87,9 @@ mock! {
         async fn delete(&self, id: Uuid) -> Result<Company>;
     }
     #[async_trait]
-    impl CompanyRepository for CompanyRepository {}
+    impl CompanyRepository for CompanyRepository {
+        async fn get_all(&self) -> Result<Vec<Company>>;
+    }
 }
 
 mock! {
@@ -306,4 +308,3 @@ mock! {
         async fn get_by_predictions_ids(&self, prediction_ids: Vec<Uuid>) -> Result<Vec<Feedback>>;
     }
 }
-

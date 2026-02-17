@@ -1,10 +1,15 @@
 use crate::adapters::web::models::user::SimplifiedUserResponse;
 use crate::adapters::web::models::{
     auth::{LoginRequest, RegisterRequest},
-    user::{FullUserResponse, UpdateUserRequest, UserResponse},
+    user::{
+        ChangePasswordRequest, FullUserResponse, RoleResponse, SimplifiedRoleResponse,
+        UpdateProfileRequest, UpdateUserRequest, UserResponse,
+    },
 };
-use spl_application::dtos::user::{CreateUserDto, LoginDto, UpdateUserDto};
-use spl_domain::entities::user::User;
+use spl_application::dtos::user::{
+    ChangePasswordDto, CreateUserDto, LoginDto, UpdateProfileDto, UpdateUserDto,
+};
+use spl_domain::entities::user::{Role, User};
 use spl_shared::map_mirror;
 
 map_mirror!(
@@ -40,6 +45,23 @@ map_mirror!(
         surname,
         role,
         company_id,
+    }
+);
+
+map_mirror!(
+    UpdateProfileRequest,
+    UpdateProfileDto {
+        email,
+        name,
+        surname,
+    }
+);
+
+map_mirror!(
+    ChangePasswordRequest,
+    ChangePasswordDto {
+        current_password,
+        new_password,
     }
 );
 
@@ -81,6 +103,25 @@ impl From<User> for FullUserResponse {
             role: user.role.name,
             company: user.company.map(|c| c.into()),
             created_at: user.created_at,
+        }
+    }
+}
+
+impl From<Role> for RoleResponse {
+    fn from(role: Role) -> Self {
+        Self {
+            id: role.id,
+            name: role.name,
+            level: role.level,
+        }
+    }
+}
+
+impl From<Role> for SimplifiedRoleResponse {
+    fn from(role: Role) -> Self {
+        Self {
+            id: role.id,
+            name: role.name,
         }
     }
 }

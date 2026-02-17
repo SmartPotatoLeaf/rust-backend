@@ -2,9 +2,9 @@ use crate::adapters::web::middleware::auth::AuthUser;
 use crate::adapters::web::models::{
     auth::{LoginRequest, RegisterRequest, TokenResponse},
     health::HealthResponse,
-    user::UserResponse,
+    user::{SimplifiedRoleResponse, UserResponse},
 };
-use spl_shared::http::responses::StatusResponse;
+use spl_shared::http::responses::{ok_iter_if_or_not_found, StatusResponse};
 
 use crate::adapters::web::state::AppState;
 use axum::{
@@ -16,6 +16,7 @@ use axum::{
     Extension, Json, Router,
 };
 
+use spl_shared::error::Result;
 use spl_shared::http::extractor::ValidatedJson;
 use spl_shared::http::middleware::{
     local_rate_limit_middleware, EndpointRateLimit, RateLimitState,
@@ -25,14 +26,13 @@ use utoipa::OpenApi;
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(login, register, health_check, validate),
-    components(schemas(LoginRequest, TokenResponse, RegisterRequest, UserResponse, HealthResponse, StatusResponse)),
+    paths(login, register, health_check, validate, get_all_roles),
+    components(schemas(LoginRequest, TokenResponse, RegisterRequest, UserResponse, HealthResponse, StatusResponse, SimplifiedRoleResponse)),
     tags((name = "auth", description = "Authentication endpoints"))
 )]
 pub struct AuthApi;
 
 pub fn router(rate_limit_state: Arc<RateLimitState>) -> Router<Arc<AppState>> {
-
     Router::new()
         .route(
             "/auth/login",
@@ -46,6 +46,7 @@ pub fn router(rate_limit_state: Arc<RateLimitState>) -> Router<Arc<AppState>> {
         .route("/auth/register", post(register))
         .route("/auth/health", get(health_check))
         .route("/auth/validate", post(validate))
+        .route("/public/roles", get(get_all_roles))
 }
 
 #[utoipa::path(
@@ -143,4 +144,25 @@ async fn validate(_user: AuthUser) -> impl IntoResponse {
         code: 200,
         message: "Token is valid".to_string(),
     })
+}
+
+#[utoipa::path(
+    get,
+    path = "/public/roles",
+    responses(
+        (status = 200, description = "List of available roles", body = Vec<SimplifiedRoleResponse>),
+        (status = 500, description = "Internal Server Error", body = StatusResponse)
+    ),
+    tag = "auth"
+)]
+async fn get_all_roles(State(state): State<Arc<AppState>>) -> Result<impl IntoResponse> {
+    let roles = state.role_service.get_all().await?;
+
+    ok_iter_if_or_not_found(
+        roles,
+        true,
+        SimplifiedRoleResponse::from,
+        SimplifiedRoleResponse::from,
+        || "There are no roles available".to_string(),
+    )
 }

@@ -105,4 +105,32 @@ impl AccessControlService {
 
         Ok(target_user_ids)
     }
+
+    /// Validates if a user has permission to manage resources for a specific company.
+    /// - Admin (>= 100): Allowed for any company.
+    /// - Supervisor (>= 50): Allowed ONLY for their own company.
+    /// - User (< 50): Forbidden.
+    pub fn validate_company_management_access(
+        &self,
+        requester: &User,
+        target_company_id: Uuid,
+    ) -> Result<()> {
+        let role_level = requester.role.level;
+
+        if role_level >= 100 {
+            // Admin allowed
+            Ok(())
+        } else if role_level >= 50 {
+            // Supervisor check
+            let user_company_id = requester.company.as_ref().map(|c| c.id);
+            if user_company_id == Some(target_company_id) {
+                Ok(())
+            } else {
+                Err(AppError::Forbidden)
+            }
+        } else {
+            // User forbidden
+            Err(AppError::Forbidden)
+        }
+    }
 }

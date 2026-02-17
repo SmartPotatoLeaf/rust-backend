@@ -16,12 +16,14 @@ use spl_infra::adapters::integrations::{
 };
 use spl_infra::adapters::web::{router, state::AppState};
 use spl_shared::http::middleware::rate_limit::RateLimitState;
+use std::net::SocketAddr;
 use std::sync::Arc;
 
 pub mod config;
 pub mod mocks;
 
 use crate::common::config::create_config;
+use axum::extract::{ConnectInfo, Extension};
 
 pub use mocks::*;
 use spl_application::services::dashboard::DashboardService;
@@ -81,14 +83,23 @@ pub fn build_app_full(
 
     let role_service = Arc::new(RoleService::new(role_repo.clone()));
 
+    let access_control_service = Arc::new(AccessControlService::new(
+        company_repo.clone(),
+        user_repo.clone(),
+    ));
+
     let user_service = Arc::new(UserService::new(
         user_repo.clone(),
         role_repo,
         company_repo.clone(),
         encoder,
+        access_control_service.clone(),
     ));
 
-    let company_service = Arc::new(CompanyService::new(company_repo.clone()));
+    let company_service = Arc::new(CompanyService::new(
+        company_repo.clone(),
+        access_control_service.clone(),
+    ));
 
     let rec_repo = Arc::new(mock_rec_repo);
     let rec_category_repo = Arc::new(mock_rec_category_repo);
@@ -112,12 +123,6 @@ pub fn build_app_full(
     // Initialize mock integration clients for tests
     let model_client: Arc<dyn ModelPredictionClient> = Arc::new(MockModelClient::new());
     let storage_client: Arc<dyn BlobStorageClient> = Arc::new(MockBlobClient::new());
-
-    // Initialize Access Control
-    let access_control_service = Arc::new(AccessControlService::new(
-        company_repo.clone(),
-        user_repo.clone(),
-    ));
 
     let prediction_service = Arc::new(PredictionService::new(
         prediction_repo.clone(),
@@ -192,5 +197,6 @@ pub fn build_app_full(
     // Rate limiting disabled for tests
     let rate_limit_state = Arc::new(RateLimitState::disabled());
 
-    router(state, rate_limit_state)
+    let addr = SocketAddr::from(([127, 0, 0, 1], 0));
+    router(state, rate_limit_state).layer(Extension(ConnectInfo(addr)))
 }

@@ -11,6 +11,7 @@ use crate::adapters::web::{
         company::{
             CompanyResponse, CreateCompanyRequest, SimplifiedCompanyResponse, UpdateCompanyRequest,
         },
+        user::{SimplifiedUserResponse, UserResponse},
     },
     state::AppState,
 };
@@ -20,12 +21,12 @@ use axum::{
     http::StatusCode,
     middleware,
     response::IntoResponse,
-    routing::{get, post, put},
+    routing::{get, put},
     Extension, Json, Router,
 };
 
 use serde::{Deserialize, Serialize};
-use spl_shared::http::responses::{ok_if_or_not_found, StatusResponse};
+use spl_shared::http::responses::{ok_if_or_not_found, ok_iter_if_or_not_found, StatusResponse};
 use std::sync::Arc;
 use utoipa::{OpenApi, ToSchema};
 use uuid::Uuid;
@@ -39,14 +40,15 @@ enum CompanyOrSimplifiedResponse {
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(create_company, get_company, update_company, delete_company),
+    paths(get_all_public_companies, get_all_companies, create_company, get_company, update_company, delete_company, get_company_users),
     components(schemas(
         CreateCompanyRequest,
         CompanyResponse,
         UpdateCompanyRequest,
         SimplifiedCompanyResponse,
         CompanyOrSimplifiedResponse,
-        StatusResponse
+        StatusResponse,
+        UserResponse
     )),
     tags((name = "companies", description = "Company endpoints"))
 )]
@@ -59,8 +61,14 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
         RoleValidation::Higher,
     ));
 
+    let supervisor_layer = middleware::from_fn_with_state(state.clone(), permission_check);
+    let supervisor_extension_roles = Extension(RequiredRoles(
+        vec!["supervisor".to_string()],
+        RoleValidation::Higher,
+    ));
+
     let admin_router = Router::new()
-        .route("/companies", post(create_company))
+        .route("/companies", get(get_all_companies).post(create_company))
         .route(
             "/companies/{id}",
             put(update_company).delete(delete_company),
@@ -69,11 +77,25 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
         .route_layer(admin_extension_roles)
         .with_state(state.clone());
 
-    let public_router = Router::new()
+    let supervisor_router = Router::new()
+        .route("/companies/{id}/users", get(get_company_users))
+        .route_layer(supervisor_layer)
+        .route_layer(supervisor_extension_roles)
+        .with_state(state.clone());
+
+    let authenticated_router = Router::new()
         .route("/companies/{id}", get(get_company))
+        .with_state(state.clone());
+
+    let public_router = Router::new()
+        .route("/public/companies", get(get_all_public_companies))
         .with_state(state);
 
-    Router::new().merge(public_router).merge(admin_router)
+    Router::new()
+        .merge(public_router)
+        .merge(authenticated_router)
+        .merge(supervisor_router)
+        .merge(admin_router)
 }
 
 #[utoipa::path(
@@ -215,4 +237,87 @@ async fn delete_company(
             message: "Company deleted successfully".to_string(),
         }),
     ))
+}
+
+#[utoipa::path(
+    get,
+    path = "/public/companies",
+    responses(
+        (status = 200, description = "List of available companies", body = Vec<SimplifiedCompanyResponse>),
+        (status = 500, description = "Internal Server Error", body = StatusResponse)
+    ),
+    tag = "companies"
+)]
+async fn get_all_public_companies(State(state): State<Arc<AppState>>) -> Result<impl IntoResponse> {
+    let companies = state.company_service.get_all_public().await?;
+
+    ok_iter_if_or_not_found(
+        companies,
+        true,
+        SimplifiedCompanyResponse::from,
+        CompanyResponse::from,
+        || "There are no companies available".to_string(),
+    )
+}
+
+#[utoipa::path(
+    get,
+    path = "/companies",
+    responses(
+        (status = 200, description = "List of all companies", body = Vec<CompanyResponse>),
+        (status = 401, description = "Unauthorized", body = StatusResponse),
+        (status = 403, description = "Forbidden - Admin access required", body = StatusResponse),
+        (status = 500, description = "Internal Server Error", body = StatusResponse)
+    ),
+    security(
+        ("jwt_auth" = [])
+    ),
+    tag = "companies"
+)]
+async fn get_all_companies(
+    State(state): State<Arc<AppState>>,
+    AuthUser(user): AuthUser,
+) -> Result<impl IntoResponse> {
+    let companies = state.company_service.get_all(&user).await?;
+
+    ok_iter_if_or_not_found(
+        companies,
+        false,
+        SimplifiedCompanyResponse::from,
+        CompanyResponse::from,
+        || "There are no companies available".to_string(),
+    )
+}
+
+#[utoipa::path(
+    get,
+    path = "/companies/{id}/users",
+    params(
+        ("id" = Uuid, Path, description = "Company ID")
+    ),
+    responses(
+        (status = 200, description = "Users belonging to the company", body = Vec<UserResponse>),
+        (status = 401, description = "Unauthorized", body = StatusResponse),
+        (status = 403, description = "Forbidden - Supervisor access required", body = StatusResponse),
+        (status = 500, description = "Internal Server Error", body = StatusResponse)
+    ),
+    security(
+        ("jwt_auth" = [])
+    ),
+    tag = "companies"
+)]
+async fn get_company_users(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+    AuthUser(user): AuthUser,
+) -> Result<impl IntoResponse> {
+    let users = state.user_service.get_by_company(&user, id).await?;
+
+    ok_iter_if_or_not_found(
+        users,
+        false,
+        SimplifiedUserResponse::from,
+        UserResponse::from,
+        move || format!("No users found for company {}", id),
+    )
 }
