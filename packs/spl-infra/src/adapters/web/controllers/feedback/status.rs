@@ -25,7 +25,7 @@ use utoipa::OpenApi;
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(get_all, get_by_id, create, update, delete_status),
+    paths(get_all_feedback_statuses, get_feedback_status_by_id, create_feedback_status, update_feedback_status, delete_status),
     components(schemas(
         CreateFeedbackStatusRequest,
         UpdateFeedbackStatusRequest,
@@ -46,15 +46,15 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
     ));
 
     let admin_router = Router::new()
-        .route("/feedback/statuses", post(create))
-        .route("/feedback/statuses/{id}", put(update).delete(delete_status))
+        .route("/feedback/statuses", post(create_feedback_status))
+        .route("/feedback/statuses/{id}", put(update_feedback_status).delete(delete_status))
         .route_layer(admin_only_layer)
         .route_layer(admin_extension_roles)
         .with_state(state.clone());
 
     let authenticated_router = Router::new()
-        .route("/feedback/statuses", get(get_all))
-        .route("/feedback/statuses/{id}", get(get_by_id))
+        .route("/feedback/statuses", get(get_all_feedback_statuses))
+        .route("/feedback/statuses/{id}", get(get_feedback_status_by_id))
         .with_state(state);
 
     Router::new()
@@ -77,7 +77,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
     security(("jwt_auth" = [])),
     tag = "feedback_status"
 )]
-async fn get_all(
+async fn get_all_feedback_statuses(
     State(state): State<Arc<AppState>>,
     _user: AuthUser,
     Query(query): Query<SimplifiedQuery>,
@@ -110,7 +110,7 @@ async fn get_all(
     security(("jwt_auth" = [])),
     tag = "feedback_status"
 )]
-async fn get_by_id(
+async fn get_feedback_status_by_id(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
     _user: AuthUser,
@@ -141,7 +141,7 @@ async fn get_by_id(
     security(("jwt_auth" = [])),
     tag = "feedback_status"
 )]
-async fn create(
+async fn create_feedback_status(
     State(state): State<Arc<AppState>>,
     _user: AuthUser,
     ValidatedJson(payload): ValidatedJson<CreateFeedbackStatusRequest>,
@@ -171,7 +171,7 @@ async fn create(
     security(("jwt_auth" = [])),
     tag = "feedback_status"
 )]
-async fn update(
+async fn update_feedback_status(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
     _user: AuthUser,

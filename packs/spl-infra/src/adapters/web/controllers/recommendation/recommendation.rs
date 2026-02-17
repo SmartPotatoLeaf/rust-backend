@@ -38,7 +38,7 @@ enum RecommendationOrSimplifiedResponse {
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(get_all, get_by_id, get_by_severity, create, update, delete_recommendation),
+    paths(get_all_recommendations, get_recommendation_by_id, get_by_severity, create_recommendation, update_recommendation, delete_recommendation),
     components(schemas(
         CreateRecommendationRequest,
         UpdateRecommendationRequest,
@@ -59,18 +59,18 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
     ));
 
     let admin_router = Router::new()
-        .route("/recommendations", post(create))
+        .route("/recommendations", post(create_recommendation))
         .route(
             "/recommendations/{id}",
-            put(update).delete(delete_recommendation),
+            put(update_recommendation).delete(delete_recommendation),
         )
         .route_layer(admin_only_layer)
         .route_layer(admin_extension_roles)
         .with_state(state.clone());
 
     let public_router = Router::new()
-        .route("/recommendations", get(get_all))
-        .route("/recommendations/{id}", get(get_by_id))
+        .route("/recommendations", get(get_all_recommendations))
+        .route("/recommendations/{id}", get(get_recommendation_by_id))
         .route(
             "/recommendations/severity/{percentage}",
             get(get_by_severity),
@@ -95,7 +95,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
     security(("jwt_auth" = [])),
     tag = "recommendations"
 )]
-async fn get_all(
+async fn get_all_recommendations(
     State(state): State<Arc<AppState>>,
     Query(query): Query<SimplifiedQuery>,
     _user: AuthUser,
@@ -127,7 +127,7 @@ async fn get_all(
     security(("jwt_auth" = [])),
     tag = "recommendations"
 )]
-async fn get_by_id(
+async fn get_recommendation_by_id(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
     Query(query): Query<SimplifiedQuery>,
@@ -193,7 +193,7 @@ async fn get_by_severity(
     security(("jwt_auth" = [])),
     tag = "recommendations"
 )]
-async fn create(
+async fn create_recommendation(
     State(state): State<Arc<AppState>>,
     ValidatedJson(payload): ValidatedJson<CreateRecommendationRequest>,
 ) -> Result<impl IntoResponse> {
@@ -222,7 +222,7 @@ async fn create(
     security(("jwt_auth" = [])),
     tag = "recommendations"
 )]
-async fn update(
+async fn update_recommendation(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
     _user: AuthUser,

@@ -47,7 +47,7 @@ enum PredictionOrSimplifiedResponse {
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(create, get_all_by_user_id, filter, get_by_id, delete_prediction, read_blob, predict),
+    paths(create_prediction, get_all_by_user_id, filter, get_prediction_by_id, delete_prediction, read_blob, predict),
     components(schemas(
         CreatePredictionRequest,
         PredictionResponse,
@@ -95,12 +95,12 @@ pub fn router(state: Arc<AppState>, limit_state: Arc<RateLimitState>) -> Router<
     router
         .route(
             "/diagnostics/predictions",
-            post(create).get(get_all_by_user_id),
+            post(create_prediction).get(get_all_by_user_id),
         )
         .route("/diagnostics/predictions/filter", post(filter))
         .route(
             "/diagnostics/predictions/{id}",
-            get(get_by_id).delete(delete_prediction),
+            get(get_prediction_by_id).delete(delete_prediction),
         )
         .route("/diagnostics/predictions/blobs/{*path}", get(read_blob))
         .with_state(state)
@@ -148,7 +148,7 @@ async fn predict(
     security(("jwt_auth" = [])),
     tag = "diagnostics/predictions"
 )]
-async fn create(
+async fn create_prediction(
     State(state): State<Arc<AppState>>,
     AuthUser(user): AuthUser,
     mut multipart: Multipart,
@@ -217,7 +217,7 @@ async fn get_all_by_user_id(
     security(("jwt_auth" = [])),
     tag = "diagnostics/predictions"
 )]
-async fn get_by_id(
+async fn get_prediction_by_id(
     State(state): State<Arc<AppState>>,
     AuthUser(user): AuthUser,
     Path(id): Path<Uuid>,

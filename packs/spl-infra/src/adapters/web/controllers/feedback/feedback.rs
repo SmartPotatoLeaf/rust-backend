@@ -21,11 +21,11 @@ use uuid::Uuid;
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        create,
+        create_feedback,
         get_all_by_user,
-        get_by_id,
+        get_feedback_by_id,
         get_by_prediction,
-        update,
+        update_feedback,
         delete_feedback
     ),
     components(schemas(
@@ -42,8 +42,8 @@ pub struct FeedbackApi;
 
 pub fn router() -> Router<Arc<AppState>> {
     Router::new()
-        .route("/feedbacks", get(get_all_by_user).post(create))
-        .route("/feedbacks/{id}", get(get_by_id).put(update).delete(delete_feedback))
+        .route("/feedbacks", get(get_all_by_user).post(create_feedback))
+        .route("/feedbacks/{id}", get(get_feedback_by_id).put(update_feedback).delete(delete_feedback))
         .route("/feedbacks/prediction/{prediction_id}", get(get_by_prediction))
 }
 
@@ -61,7 +61,7 @@ pub fn router() -> Router<Arc<AppState>> {
     security(("jwt_auth" = [])),
     tag = "feedbacks"
 )]
-async fn create(
+async fn create_feedback(
     State(state): State<Arc<AppState>>,
     AuthUser(user): AuthUser,
     ValidatedJson(payload): ValidatedJson<CreateFeedbackRequest>,
@@ -119,7 +119,7 @@ async fn get_all_by_user(
     security(("jwt_auth" = [])),
     tag = "feedbacks"
 )]
-async fn get_by_id(
+async fn get_feedback_by_id(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
     AuthUser(user): AuthUser,
@@ -189,7 +189,7 @@ async fn get_by_prediction(
     security(("jwt_auth" = [])),
     tag = "feedbacks"
 )]
-async fn update(
+async fn update_feedback(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
     AuthUser(user): AuthUser,
