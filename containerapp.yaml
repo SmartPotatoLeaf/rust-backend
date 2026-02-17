@@ -14,7 +14,7 @@ properties:
   managedEnvironmentId: <env id>
   template:
     containers:
-      - image: yoimerdr/spl-backend-rust:2.0.0-alpine
+      - image: yoimerdr/spl-backend-rust:2.1.0-alpine
         name: spl-backend-rust
         env: []
         resources:
