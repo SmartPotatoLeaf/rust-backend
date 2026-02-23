@@ -11,13 +11,14 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::{Validate, ValidationError};
 use crate::adapters::web::models::diagnostics::label::RawLabelResponse;
+use crate::adapters::web::models::user::SimplifiedUserResponse;
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct PredictionResponse {
     /// Unique identifier of the prediction
     pub id: Uuid,
     /// User who created the prediction
-    pub user_id: Uuid,
+    pub user: SimplifiedUserResponse,
     /// Confidence level for disease presence (0.0 to 1.0)
     pub presence_confidence: f32,
     /// Confidence level for disease absence (0.0 to 1.0)
@@ -43,7 +44,7 @@ pub struct SimplifiedPredictionResponse {
     /// Unique identifier of the prediction
     pub id: Uuid,
     /// User who created the prediction
-    pub user_id: Uuid,
+    pub user: SimplifiedUserResponse,
     /// Confidence level for disease presence (0.0 to 1.0)
     pub presence_confidence: f32,
     /// Confidence level for disease absence (0.0 to 1.0)

@@ -1,7 +1,10 @@
-use crate::adapters::web::models::diagnostics::{FilterPredictionsRequest, PredictionResponse, RawPredictionResponse, SimplifiedPredictionResponse};
+use crate::adapters::web::models::diagnostics::{
+    FilterPredictionsRequest, PredictionResponse, RawPredictionResponse,
+    SimplifiedPredictionResponse,
+};
 use spl_application::dtos::diagnostics::FilterPredictionDto;
-use spl_domain::entities::diagnostics::Prediction;
 use spl_domain::entities::diagnostics::prediction::RawPrediction;
+use spl_domain::entities::diagnostics::Prediction;
 use spl_domain::entities::user::User;
 use spl_shared::error::AppError;
 use spl_shared::traits::IntoWithContext;
@@ -10,7 +13,7 @@ impl From<Prediction> for PredictionResponse {
     fn from(param: Prediction) -> Self {
         Self {
             id: param.id,
-            user_id: param.user.id,
+            user: param.user.into(),
             presence_confidence: param.presence_confidence,
             absence_confidence: param.absence_confidence,
             severity: param.severity,
@@ -55,7 +58,7 @@ impl From<Prediction> for SimplifiedPredictionResponse {
     fn from(param: Prediction) -> Self {
         Self {
             id: param.id,
-            user_id: param.user.id,
+            user: param.user.into(),
             presence_confidence: param.presence_confidence,
             absence_confidence: param.absence_confidence,
             plot_id: param.plot_id,
@@ -68,7 +71,6 @@ impl From<Prediction> for SimplifiedPredictionResponse {
         }
     }
 }
-
 
 impl From<RawPrediction> for RawPredictionResponse {
     fn from(value: RawPrediction) -> Self {
