@@ -1,6 +1,8 @@
 use spl_shared::error::Result;
 use spl_shared::http::extractor::ValidatedJson;
-use spl_shared::http::responses::{json_if, ok_if_or_not_found, StatusResponse};
+use spl_shared::http::responses::{
+    json_if, ok_if_or_not_found, ok_iter_if_or_not_found, StatusResponse,
+};
 
 use crate::adapters::web::{
     middleware::auth::AuthUser,
@@ -51,7 +53,15 @@ enum DashboardCountsOrSimplifiedResponse {
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(get_filters, get_summary, get_filters_admin, get_summary_counts, get_summary_detailed_plot_by_id, get_summary_detailed_plot_default),
+    paths(
+        get_filters,
+        get_summary,
+        get_filters_admin,
+        get_summary_counts,
+        get_summary_detailed_plot_by_id,
+        get_summary_detailed_plot_default,
+        get_summary_compare
+    ),
     components(schemas(
         DashboardFiltersRequest,
         DashboardFiltersResponse,
@@ -91,6 +101,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
         )
         .route("/dashboard/summary", post(get_summary))
         .route("/dashboard/counts", post(get_summary_counts))
+        .route("/dashboard/compare", post(get_summary_compare))
         .route(
             "/dashboard/plots/default/summary",
             post(get_summary_detailed_plot_default),
@@ -253,6 +264,41 @@ async fn get_summary_counts(
     );
 
     Ok((StatusCode::OK, results))
+}
+
+#[utoipa::path(
+    post,
+    path = "/dashboard/compare",
+    request_body = DashboardSummaryRequest,
+    responses(
+        (status = 200, description = "Dashboard summaries with statistics", body = Vec<DashboardSummaryResponse>),
+        (status = 400, description = "Invalid input", body = StatusResponse),
+        (status = 401, description = "Unauthorized", body = StatusResponse),
+        (status = 403, description = "Forbidden", body = StatusResponse),
+        (status = 500, description = "Internal Server Error", body = StatusResponse)
+    ),
+    security(
+        ("jwt_auth" = [])
+    ),
+    tag = "dashboard"
+)]
+async fn get_summary_compare(
+    State(state): State<Arc<AppState>>,
+    AuthUser(user): AuthUser,
+    ValidatedJson(payload): ValidatedJson<DashboardSummaryRequest>,
+) -> Result<impl IntoResponse> {
+    let summary = state
+        .dashboard_service
+        .get_summary_compares(user, payload.into())
+        .await?;
+
+    ok_iter_if_or_not_found(
+        summary,
+        true,
+        DashboardSummaryResponse::from,
+        DashboardSummaryResponse::from,
+        || "No plots found for company".to_string(),
+    )
 }
 
 #[utoipa::path(

@@ -47,4 +47,14 @@ pub trait DashboardSummaryRepository: Send + Sync {
         plot_ids: Vec<Option<Uuid>>,
         labels: Option<Vec<String>>,
     ) -> Result<Option<DashboardDetailedPlot>>;
+
+    /// The dashboard summaries for compare plots
+    async fn get_compare(
+        &self,
+        users_ids: Vec<Uuid>,
+        min_date: Option<DateTime<Utc>>,
+        max_date: Option<DateTime<Utc>>,
+        plot_ids: Vec<Option<Uuid>>,
+        labels: Option<Vec<String>>,
+    ) -> Result<Vec<DashboardSummary>>;
 }

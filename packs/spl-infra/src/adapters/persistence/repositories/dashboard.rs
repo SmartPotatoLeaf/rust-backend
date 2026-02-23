@@ -2,6 +2,8 @@ use crate::adapters::persistence::entities::diagnostics::{label, prediction};
 use crate::adapters::persistence::entities::user;
 use crate::adapters::persistence::repositories::DbPredictionRepository;
 use chrono::{DateTime, Utc};
+use futures::future::try_join_all;
+use itertools::Itertools;
 use sea_orm::prelude::DateTimeWithTimeZone;
 use sea_orm::sea_query::{Expr, ExprTrait, Func};
 use sea_orm::*;
@@ -17,6 +19,16 @@ use spl_shared::traits::IntoWithContext;
 use std::collections::HashMap;
 use std::sync::Arc;
 use uuid::Uuid;
+
+#[derive(Debug, FromQueryResult)]
+struct SummaryRow {
+    pub plot_id: Option<Uuid>,
+    pub label_id: Option<Uuid>,
+    pub label_name: Option<String>,
+    pub label_weight: Option<i32>,
+    pub count: i64,
+    pub month: Option<chrono::NaiveDateTime>, // DATE_TRUNC devuelve timestamp
+}
 
 pub struct DbDashboardSummaryRepository {
     db: DatabaseConnection,
@@ -257,5 +269,30 @@ impl DashboardSummaryRepository for DbDashboardSummaryRepository {
             .ok_or_else(|| AppError::NotFound("Company has no default plot".to_string()))?;
 
         Ok(Some(detailed.into_with_context(summary)?))
+    }
+
+    async fn get_compare(
+        &self,
+        users_ids: Vec<Uuid>,
+        min_date: Option<DateTime<Utc>>,
+        max_date: Option<DateTime<Utc>>,
+        plot_ids: Vec<Option<Uuid>>,
+        labels: Option<Vec<String>>,
+    ) -> Result<Vec<DashboardSummary>> {
+        let futures = plot_ids
+            .into_iter()
+            .unique()
+            .map(|el| {
+                self.get_summary(
+                    users_ids.clone(),
+                    min_date,
+                    max_date,
+                    vec![el],
+                    labels.clone(),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        try_join_all(futures).await
     }
 }

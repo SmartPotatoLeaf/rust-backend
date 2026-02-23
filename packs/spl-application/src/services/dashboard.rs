@@ -258,9 +258,7 @@ impl DashboardService {
         dto: DashboardSummaryPlotDto,
     ) -> Result<Option<DashboardDetailedPlot>> {
         let company_id = self.resolve_company_id(&requester, &dto).await?;
-        let (users_ids, plots_ids) = self
-            .validate_ids(&requester, &dto.users_ids, &None)
-            .await?;
+        let (users_ids, plots_ids) = self.validate_ids(&requester, &dto.users_ids, &None).await?;
 
         self.dashboard_repository
             .get_default_summary_detailed_plot(
@@ -271,6 +269,25 @@ impl DashboardService {
                 plots_ids,
                 dto.labels,
             )
+            .await
+    }
+
+    pub async fn get_summary_compares(
+        &self,
+        requester: User,
+        dto: DashboardSummaryDto,
+    ) -> Result<Vec<DashboardSummary>> {
+        if dto.plot_ids.is_none() {
+            return Err(AppError::NoContent(
+                "No content available for empty plot_ids".to_string(),
+            ));
+        }
+        let (users_ids, plots_ids) = self
+            .validate_ids(&requester, &dto.users_ids, &dto.plot_ids)
+            .await?;
+
+        self.dashboard_repository
+            .get_compare(users_ids, dto.min_date, dto.max_date, plots_ids, dto.labels)
             .await
     }
 }
