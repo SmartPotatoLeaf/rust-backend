@@ -294,7 +294,6 @@ mock! {
         users_ids: Vec<Uuid>,
         min_date: Option<DateTime<Utc>>,
         max_date: Option<DateTime<Utc>>,
-        plot_ids: Vec<Option<Uuid>>,
         labels: Option<Vec<String>>,
     ) -> Result<Option<DashboardDetailedPlot>>;
 

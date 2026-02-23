@@ -221,7 +221,6 @@ impl DashboardSummaryRepository for DbDashboardSummaryRepository {
         users_ids: Vec<Uuid>,
         min_date: Option<DateTime<Utc>>,
         max_date: Option<DateTime<Utc>>,
-        plot_ids: Vec<Option<Uuid>>,
         labels: Option<Vec<String>>,
     ) -> Result<Option<DashboardDetailedPlot>> {
         let (detailed, summary) = tokio::try_join!(
@@ -230,7 +229,7 @@ impl DashboardSummaryRepository for DbDashboardSummaryRepository {
                 plot_id,
                 labels.clone().unwrap_or(vec![])
             ),
-            self.get_summary(users_ids, min_date, max_date, plot_ids, labels)
+            self.get_summary(users_ids, min_date, max_date, vec![Some(plot_id)], labels)
         )?;
 
         let detailed = detailed

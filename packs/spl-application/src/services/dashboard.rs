@@ -235,7 +235,7 @@ impl DashboardService {
         dto: DashboardSummaryPlotDto,
     ) -> Result<Option<DashboardDetailedPlot>> {
         let company_id = self.resolve_company_id(&requester, &dto).await?;
-        let (users_ids, plots_ids) = self
+        let (users_ids, _) = self
             .validate_ids(&requester, &dto.users_ids, &Some(vec![Some(plot_id)]))
             .await?;
 
@@ -246,7 +246,6 @@ impl DashboardService {
                 users_ids,
                 dto.min_date,
                 dto.max_date,
-                plots_ids,
                 dto.labels,
             )
             .await
