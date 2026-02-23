@@ -5,8 +5,7 @@ use crate::adapters::web::models::plot::{
 use spl_application::dtos::plot::{
     AssignPlotDto, CreatePlotDto, DetailedPlotDto, PaginatedDetailedPlot, UpdatePlotDto,
 };
-use spl_domain::entities::plot::Plot;
-use spl_domain::ports::repositories::plot::DetailedPlot;
+use spl_domain::entities::plot::{Plot, DetailedPlot};
 use spl_shared::error::{AppError, Result};
 use spl_shared::traits::IntoWithContext;
 use uuid::Uuid;

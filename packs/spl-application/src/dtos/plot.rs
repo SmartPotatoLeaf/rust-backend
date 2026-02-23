@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use spl_domain::ports::repositories::plot::DetailedPlot;
+use spl_domain::entities::plot::DetailedPlot;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

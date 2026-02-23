@@ -17,3 +17,15 @@ pub struct Plot {
     /// When the plot was last updated
     pub updated_at: DateTime<Utc>,
 }
+
+/// Detailed plot statistics for aggregated views
+#[derive(Debug, Clone)]
+pub struct DetailedPlot {
+    pub id: Option<Uuid>,
+    pub name: String,
+    pub description: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub total_diagnosis: i64,
+    pub last_diagnosis: Option<DateTime<Utc>>,
+    pub matching_diagnosis: i64,
+}

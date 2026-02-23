@@ -1,20 +1,9 @@
-use crate::entities::plot::Plot;
+use crate::entities::plot::{DetailedPlot, Plot};
 use crate::ports::repositories::crud::CrudRepository;
 use async_trait::async_trait;
 use spl_shared::error::Result;
 use uuid::Uuid;
 
-/// Detailed plot statistics for aggregated views
-#[derive(Debug, Clone)]
-pub struct DetailedPlot {
-    pub id: Option<Uuid>,
-    pub name: String,
-    pub description: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub total_diagnosis: i64,
-    pub last_diagnosis: Option<chrono::DateTime<chrono::Utc>>,
-    pub matching_diagnosis: i64,
-}
 
 #[async_trait]
 pub trait PlotRepository: CrudRepository<Plot, Uuid> {

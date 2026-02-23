@@ -7,9 +7,9 @@ use sea_orm::sea_query::{
 };
 use sea_orm::JoinType;
 use sea_orm::*;
-use spl_domain::entities::plot::Plot;
+use spl_domain::entities::plot::{DetailedPlot, Plot};
 use spl_domain::ports::repositories::crud::CrudRepository;
-use spl_domain::ports::repositories::plot::{DetailedPlot, PlotRepository};
+use spl_domain::ports::repositories::plot::{PlotRepository};
 use spl_shared::adapters::persistence::repository::crud;
 use spl_shared::error::{AppError, Result};
 use uuid::Uuid;

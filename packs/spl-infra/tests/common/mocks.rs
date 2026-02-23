@@ -178,18 +178,18 @@ mock! {
             offset: u64,
             limit: u64,
             labels: Vec<String>,
-        ) -> Result<(i64, Vec<repositories::plot::DetailedPlot>)>;
+        ) -> Result<(i64, Vec<entities::plot::DetailedPlot>)>;
         async fn get_detailed_by_id(
             &self,
             company_id: Uuid,
             plot_id: Uuid,
             labels: Vec<String>,
-        ) -> Result<Option<repositories::plot::DetailedPlot>>;
+        ) -> Result<Option<entities::plot::DetailedPlot>>;
         async fn get_default_detailed(
             &self,
             company_id: Uuid,
             labels: Vec<String>,
-        ) -> Result<Option<repositories::plot::DetailedPlot>>;
+        ) -> Result<Option<entities::plot::DetailedPlot>>;
     }
 }
 

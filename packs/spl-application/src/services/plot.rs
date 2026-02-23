@@ -4,10 +4,10 @@ use crate::dtos::plot::{
 };
 use crate::services::access_control::AccessControlService;
 
-use spl_domain::entities::plot::Plot;
+use spl_domain::entities::plot::{DetailedPlot, Plot};
 use spl_domain::entities::user::User;
 use spl_domain::ports::repositories::diagnostics::PredictionRepository;
-use spl_domain::ports::repositories::plot::{DetailedPlot, PlotRepository};
+use spl_domain::ports::repositories::plot::PlotRepository;
 use spl_shared::error::{AppError, Result};
 use spl_shared::traits::IntoWithContext;
 use std::sync::Arc;

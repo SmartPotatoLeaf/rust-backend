@@ -1,7 +1,6 @@
 use crate::adapters::persistence::entities::plot::{ActiveModel, Model};
 use crate::adapters::persistence::repositories::plot::{DetailedPlotQueryResult, PlotQueryResult};
-use spl_domain::entities::plot::Plot;
-use spl_domain::ports::repositories::plot::DetailedPlot;
+use spl_domain::entities::plot::{Plot, DetailedPlot};
 use spl_shared::{map_mirror, maps_set};
 
 map_mirror!(Model, Plot {
