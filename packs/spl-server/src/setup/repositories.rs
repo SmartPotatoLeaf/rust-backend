@@ -101,7 +101,10 @@ pub fn initialize_repositories(db: DatabaseConnection) -> Repositories {
         recommendation_category_repo.clone(),
     ));
 
-    let dashboard_repo: Arc<dyn DashboardSummaryRepository> = Arc::new(DbDashboardSummaryRepository::new(db.clone()));
+    let dashboard_repo: Arc<dyn DashboardSummaryRepository> = Arc::new(DbDashboardSummaryRepository::new(
+        db.clone(),
+        prediction_repo.clone(),
+    ));
 
     Repositories {
         role_repo,

@@ -1,4 +1,4 @@
-use crate::entities::dashboard::DashboardSummary;
+use crate::entities::dashboard::{DashboardSummary, DashboardCounts};
 use chrono::{DateTime, Utc};
 use spl_shared::error::Result;
 use uuid::Uuid;
@@ -13,4 +13,14 @@ pub trait DashboardSummaryRepository : Send + Sync {
         plot_ids: Vec<Option<Uuid>>,
         labels: Option<Vec<String>>,
     ) -> Result<DashboardSummary>;
+
+    async fn get_counts(
+        &self,
+        users_ids: Vec<Uuid>,
+        min_date: Option<DateTime<Utc>>,
+        max_date: Option<DateTime<Utc>>,
+        plot_ids: Vec<Option<Uuid>>,
+        labels: Option<Vec<String>>,
+        last_n: u64,
+    ) -> Result<DashboardCounts>;
 }

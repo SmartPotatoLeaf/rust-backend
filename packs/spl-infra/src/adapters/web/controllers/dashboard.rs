@@ -7,9 +7,9 @@ use crate::adapters::web::{
     models::{
         common::SimplifiedQuery,
         dashboard::{
-            DashboardDistributionResponse, DashboardFiltersRequest, DashboardFiltersResponse,
-            DashboardLabelCountResponse, DashboardSummaryRequest, DashboardSummaryResponse,
-            SimplifiedDashboardFiltersResponse,
+            DashboardCountsRequest, DashboardCountsResponse, DashboardDistributionResponse,
+            DashboardFiltersRequest, DashboardFiltersResponse, DashboardLabelCountResponse,
+            DashboardSummaryRequest, DashboardSummaryResponse, SimplifiedDashboardFiltersResponse,
         },
         user::SimplifiedUserResponse,
     },
@@ -28,6 +28,7 @@ use axum::{
 use crate::adapters::web::middleware::permissions::{
     permission_check, RequiredRoles, RoleValidation,
 };
+use crate::adapters::web::models::dashboard::SimplifiedDashboardCountsResponse;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::{OpenApi, ToSchema};
@@ -39,9 +40,16 @@ enum DashboardFiltersOrSimplifiedResponse {
     Simplified(SimplifiedDashboardFiltersResponse),
 }
 
+#[derive(Debug, Serialize, ToSchema, Clone, Deserialize)]
+#[serde(untagged)]
+enum DashboardCountsOrSimplifiedResponse {
+    Full(DashboardCountsResponse),
+    Simplified(SimplifiedDashboardCountsResponse),
+}
+
 #[derive(OpenApi)]
 #[openapi(
-    paths(get_filters, get_summary, get_filters_admin),
+    paths(get_filters, get_summary, get_filters_admin, get_summary_counts),
     components(schemas(
         DashboardFiltersRequest,
         DashboardFiltersResponse,
@@ -52,7 +60,11 @@ enum DashboardFiltersOrSimplifiedResponse {
         StatusResponse,
         SimplifiedUserResponse,
         DashboardDistributionResponse,
-        DashboardLabelCountResponse
+        DashboardLabelCountResponse,
+        DashboardCountsRequest,
+        DashboardCountsResponse,
+        SimplifiedDashboardCountsResponse,
+        DashboardCountsOrSimplifiedResponse
     )),
     tags((name = "dashboard", description = "Dashboard analytics endpoints"))
 )]
@@ -74,6 +86,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
                 .route_layer(admin_extension_roles),
         )
         .route("/dashboard/summary", post(get_summary))
+        .route("/dashboard/counts", post(get_summary_counts))
         .with_state(state)
 }
 
@@ -188,4 +201,44 @@ async fn get_summary(
         StatusCode::OK,
         Json(DashboardSummaryResponse::from(summary)),
     ))
+}
+
+#[utoipa::path(
+    post,
+    path = "/dashboard/counts",
+    request_body = DashboardCountsRequest,
+    params(
+        SimplifiedQuery
+    ),
+    responses(
+        (status = 200, description = "Dashboard summary with statistics and last predictions", body = DashboardCountsOrSimplifiedResponse),
+        (status = 400, description = "Invalid input", body = StatusResponse),
+        (status = 401, description = "Unauthorized", body = StatusResponse),
+        (status = 403, description = "Forbidden", body = StatusResponse),
+        (status = 500, description = "Internal Server Error", body = StatusResponse)
+    ),
+    security(
+        ("jwt_auth" = [])
+    ),
+    tag = "dashboard"
+)]
+async fn get_summary_counts(
+    State(state): State<Arc<AppState>>,
+    AuthUser(user): AuthUser,
+    Query(simplified_query): Query<SimplifiedQuery>,
+    ValidatedJson(payload): ValidatedJson<DashboardCountsRequest>,
+) -> Result<impl IntoResponse> {
+    let counts = state
+        .dashboard_service
+        .get_counts(user, payload.into())
+        .await?;
+
+    let results = json_if(
+        counts,
+        simplified_query.simplified,
+        SimplifiedDashboardCountsResponse::from,
+        DashboardCountsResponse::from,
+    );
+
+    Ok((StatusCode::OK, results))
 }

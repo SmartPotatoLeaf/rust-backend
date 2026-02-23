@@ -1,4 +1,5 @@
 use crate::entities::diagnostics::Label;
+use crate::entities::diagnostics::Prediction;
 use crate::entities::plot::Plot;
 use crate::entities::user::User;
 
@@ -6,7 +7,7 @@ use crate::entities::user::User;
 pub struct DashboardSummaryFilters {
     pub labels: Vec<Label>,
     pub plots: Vec<Plot>,
-    pub users: Vec<User>
+    pub users: Vec<User>,
 }
 
 #[derive(Debug, Clone)]
@@ -27,4 +28,13 @@ pub struct DashboardSummary {
     pub plots: u64,
     pub mean_severity: f32,
     pub distribution: Option<Vec<DashboardDistribution>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct DashboardCounts {
+    pub total: u64,
+    pub plots: u64,
+    pub mean_severity: f32,
+    pub distribution: Option<Vec<DashboardDistribution>>,
+    pub last_predictions: Vec<Prediction>,
 }

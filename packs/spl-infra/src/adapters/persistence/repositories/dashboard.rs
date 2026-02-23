@@ -6,20 +6,29 @@ use sea_orm::prelude::DateTimeWithTimeZone;
 use sea_orm::sea_query::{Expr, ExprTrait, Func};
 use sea_orm::*;
 use spl_domain::entities::dashboard::{
-    DashboardDistribution, DashboardLabelCount, DashboardSummary,
+    DashboardCounts, DashboardDistribution, DashboardLabelCount, DashboardSummary,
 };
 use spl_domain::ports::repositories::dashboard::DashboardSummaryRepository;
+use spl_domain::ports::repositories::diagnostics::PredictionRepository;
 use spl_shared::error::{AppError, Result};
 use std::collections::HashMap;
+use std::sync::Arc;
 use uuid::Uuid;
 
 pub struct DbDashboardSummaryRepository {
     db: DatabaseConnection,
+    prediction_repository: Arc<dyn PredictionRepository>,
 }
 
 impl DbDashboardSummaryRepository {
-    pub fn new(db: DatabaseConnection) -> Self {
-        Self { db }
+    pub fn new(
+        db: DatabaseConnection,
+        prediction_repository: Arc<dyn PredictionRepository>,
+    ) -> Self {
+        Self {
+            db,
+            prediction_repository,
+        }
     }
 }
 
@@ -156,6 +165,44 @@ impl DashboardSummaryRepository for DbDashboardSummaryRepository {
                     })
                     .collect(),
             ),
+        })
+    }
+
+    async fn get_counts(
+        &self,
+        users_ids: Vec<Uuid>,
+        min_date: Option<DateTime<Utc>>,
+        max_date: Option<DateTime<Utc>>,
+        plot_ids: Vec<Option<Uuid>>,
+        labels: Option<Vec<String>>,
+        last_n: u64,
+    ) -> Result<DashboardCounts> {
+        // Get summary statistics by reusing get_summary
+        let (summary, predictions) = tokio::try_join!(
+            self.get_summary(
+                users_ids.clone(),
+                min_date,
+                max_date,
+                plot_ids.clone(),
+                labels.clone()
+            ),
+            self.prediction_repository.filter(
+                users_ids,
+                labels,
+                Some(plot_ids),
+                min_date,
+                max_date,
+                0,
+                last_n,
+            )
+        )?;
+
+        Ok(DashboardCounts {
+            total: summary.total,
+            plots: summary.plots,
+            mean_severity: summary.mean_severity,
+            distribution: summary.distribution,
+            last_predictions: predictions.1,
         })
     }
 }

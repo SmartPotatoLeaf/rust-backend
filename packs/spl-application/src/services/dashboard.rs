@@ -1,5 +1,5 @@
-use crate::dtos::dashboard::{DashboardFiltersDto, DashboardSummaryDto};
-use spl_domain::entities::dashboard::{DashboardSummary, DashboardSummaryFilters};
+use crate::dtos::dashboard::{DashboardCountsDto, DashboardFiltersDto, DashboardSummaryDto};
+use spl_domain::entities::dashboard::{DashboardCounts, DashboardSummary, DashboardSummaryFilters};
 use spl_domain::entities::user::User;
 use spl_domain::ports::repositories::dashboard::DashboardSummaryRepository;
 use spl_domain::ports::repositories::diagnostics::LabelRepository;
@@ -68,7 +68,11 @@ impl DashboardService {
         })
     }
 
-    async fn get_allowed_user_ids(&self, requester: &User, ids: &Option<Vec<Uuid>>) -> Result<Vec<Uuid>> {
+    async fn get_allowed_user_ids(
+        &self,
+        requester: &User,
+        ids: &Option<Vec<Uuid>>,
+    ) -> Result<Vec<Uuid>> {
         let company = requester
             .company
             .clone()
@@ -81,7 +85,7 @@ impl DashboardService {
             .into_iter()
             .map(|u| (u.id, u.id))
             .collect::<HashMap<_, _>>();
-        
+
         let ids = ids.clone().unwrap_or_default();
 
         if ids.len() > allowed_ids.len() {
@@ -95,7 +99,7 @@ impl DashboardService {
         if ids.is_empty() {
             return Ok(allowed_ids.into_iter().map(|e| e.0).collect());
         }
-        
+
         Ok(ids)
     }
 
@@ -144,25 +148,59 @@ impl DashboardService {
         Ok(ids)
     }
 
-    /// Get dashboard summary with statistics using existing filter method
-    pub async fn get_summary(
+    async fn validate_ids(
         &self,
-        requester: User,
-        dto: DashboardSummaryDto,
-    ) -> Result<DashboardSummary> {
+        requester: &User,
+        user_ids: &Option<Vec<Uuid>>,
+        plot_ids: &Option<Vec<Option<Uuid>>>,
+    ) -> Result<(Vec<Uuid>, Vec<Option<Uuid>>)> {
         let mut plots_ids: Vec<Option<Uuid>> = vec![];
         let mut users_ids: Vec<Uuid> = vec![];
 
         if requester.role.level < 100 {
             // For non-admin users, we need to check if they have access to the requested user IDs (if any)
             (users_ids, plots_ids) = tokio::try_join!(
-               self.get_allowed_user_ids(&requester, &dto.users_ids),
-                self.get_allowed_plot_ids(&requester, &dto.plot_ids)
+                self.get_allowed_user_ids(&requester, user_ids),
+                self.get_allowed_plot_ids(&requester, plot_ids)
             )?;
         }
 
+        Ok((users_ids, plots_ids))
+    }
+
+    /// Get dashboard summary with statistics using existing filter method
+    pub async fn get_summary(
+        &self,
+        requester: User,
+        dto: DashboardSummaryDto,
+    ) -> Result<DashboardSummary> {
+        let (users_ids, plots_ids) = self
+            .validate_ids(&requester, &dto.users_ids, &dto.plot_ids)
+            .await?;
         self.dashboard_repository
             .get_summary(users_ids, dto.min_date, dto.max_date, plots_ids, dto.labels)
+            .await
+    }
+
+    /// Get dashboard counts (summary + last predictions) using existing filter method
+    pub async fn get_counts(
+        &self,
+        requester: User,
+        dto: DashboardCountsDto,
+    ) -> Result<DashboardCounts> {
+        let (users_ids, plots_ids) = self
+            .validate_ids(&requester, &dto.users_ids, &dto.plot_ids)
+            .await?;
+
+        self.dashboard_repository
+            .get_counts(
+                users_ids,
+                dto.min_date,
+                dto.max_date,
+                plots_ids,
+                dto.labels,
+                dto.last_n,
+            )
             .await
     }
 }

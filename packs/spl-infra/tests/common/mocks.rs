@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use chrono::DateTime;
 use chrono::Utc;
 use mockall::mock;
-use spl_domain::entities::dashboard::DashboardSummary;
+use spl_domain::entities::dashboard::{DashboardCounts, DashboardSummary};
 use spl_domain::entities::diagnostics::{MarkType, Prediction, PredictionMark};
 use spl_domain::entities::feedback::Feedback;
 use spl_domain::entities::plot::Plot;
@@ -270,6 +270,15 @@ mock! {
         plot_ids: Vec<Option<Uuid>>,
         labels: Option<Vec<String>>,
     ) -> Result<DashboardSummary>;
+        async fn get_counts(
+        &self,
+        users_ids: Vec<Uuid>,
+        min_date: Option<DateTime<Utc>>,
+        max_date: Option<DateTime<Utc>>,
+        plot_ids: Vec<Option<Uuid>>,
+        labels: Option<Vec<String>>,
+        last_n: u64,
+    ) -> Result<DashboardCounts>;
     }
 }
 

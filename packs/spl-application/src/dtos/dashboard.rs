@@ -16,3 +16,14 @@ pub struct DashboardSummaryDto {
     pub plot_ids: Option<Vec<Option<Uuid>>>,
     pub labels: Option<Vec<String>>,
 }
+
+/// DTO for requesting dashboard counts (summary + last predictions)
+#[derive(Debug, Clone)]
+pub struct DashboardCountsDto {
+    pub users_ids: Option<Vec<Uuid>>,
+    pub min_date: Option<DateTime<Utc>>,
+    pub max_date: Option<DateTime<Utc>>,
+    pub plot_ids: Option<Vec<Option<Uuid>>>,
+    pub labels: Option<Vec<String>>,
+    pub last_n: u64,
+}

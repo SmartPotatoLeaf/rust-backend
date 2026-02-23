@@ -2,10 +2,32 @@ use chrono::{DateTime, Utc};
 use crate::adapters::web::models::diagnostics::{LabelResponse, SimplifiedLabelResponse};
 use crate::adapters::web::models::plot::{PlotResponse, SimplifiedPlotResponse};
 use crate::adapters::web::models::user::{SimplifiedUserResponse, UserResponse};
+use crate::adapters::web::models::diagnostics::prediction::{PredictionResponse, SimplifiedPredictionResponse};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Validate)]
+pub struct DashboardCountsRequest {
+    /// Filter by specific user IDs
+    pub users_ids: Option<Vec<Uuid>>,
+    /// Filter data from this date onwards
+    pub min_date: Option<DateTime<Utc>>,
+    /// Filter data up to this date
+    pub max_date: Option<DateTime<Utc>>,
+    /// Filter by plot IDs (None for unassigned)
+    pub plot_ids: Option<Vec<Option<Uuid>>>,
+    /// Filter by disease label names
+    pub labels: Option<Vec<String>>,
+    /// Number of last predictions to include (default: 10)
+    #[serde(default = "default_last_n")]
+    pub last_n: u64,
+}
+
+fn default_last_n() -> u64 {
+    10
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Validate)]
 pub struct DashboardFiltersRequest {
@@ -72,4 +94,33 @@ pub struct DashboardSummaryResponse {
     pub mean_severity: f32,
     /// Monthly distribution of predictions by label
     pub distribution: Option<Vec<DashboardDistributionResponse>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct DashboardCountsResponse {
+    /// Total number of predictions
+    pub total: u64,
+    /// Total number of plots
+    pub plots: u64,
+    /// Average severity across all predictions
+    pub mean_severity: f32,
+    /// Monthly distribution of predictions by label
+    pub distribution: Option<Vec<DashboardDistributionResponse>>,
+    /// Last predictions matching the filters
+    pub last_predictions: Vec<PredictionResponse>,
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct SimplifiedDashboardCountsResponse {
+    /// Total number of predictions
+    pub total: u64,
+    /// Total number of plots
+    pub plots: u64,
+    /// Average severity across all predictions
+    pub mean_severity: f32,
+    /// Monthly distribution of predictions by label
+    pub distribution: Option<Vec<DashboardDistributionResponse>>,
+    /// Last predictions matching the filters
+    pub last_predictions: Vec<SimplifiedPredictionResponse>,
 }
