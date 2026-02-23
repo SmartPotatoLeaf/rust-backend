@@ -126,15 +126,12 @@ impl DashboardSummaryRepository for DbDashboardSummaryRepository {
                 .all(&self.db),
         )?;
 
-        // Calculate mean severity
-        let labels_count: f64 = labels.len() as f64;
-
         let mut mean = labels
             .into_iter()
             .map(|l| l.weight as i64 * l.count)
             .sum::<i64>() as f64;
 
-        mean /= labels_count;
+        mean /= total as f64;
 
         // Group monthly distribution by month
         let mut monthly_map: HashMap<String, Vec<LabelQueryResult>> = HashMap::new();
