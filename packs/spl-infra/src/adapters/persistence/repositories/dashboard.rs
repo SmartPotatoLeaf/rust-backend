@@ -140,7 +140,9 @@ impl DashboardSummaryRepository for DbDashboardSummaryRepository {
             .map(|l| l.weight as i64 * l.count)
             .sum::<i64>() as f64;
 
-        mean /= total as f64;
+        if total > 0 {
+            mean /= total as f64;
+        }
 
         // Group monthly distribution by month
         let mut monthly_map: HashMap<String, Vec<LabelQueryResult>> = HashMap::new();
