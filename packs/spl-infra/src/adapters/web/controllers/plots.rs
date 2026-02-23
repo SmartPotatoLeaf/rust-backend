@@ -77,9 +77,9 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
         RoleValidation::Lower,
     ));
 
-    let supervisor_only_extension_roles = Extension(RequiredRoles(
+    let supervisor_higher_extension_roles = Extension(RequiredRoles(
         vec!["supervisor".to_string()],
-        RoleValidation::SameStrict,
+        RoleValidation::Higher,
     ));
 
     let supervisor_lower_router = Router::new()
@@ -98,7 +98,7 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
         .route("/plots", post(create_plot))
         .route("/plots/{id}", put(update_plot).delete(delete_plot))
         .route_layer(permission_layer.clone())
-        .route_layer(supervisor_only_extension_roles.clone())
+        .route_layer(supervisor_higher_extension_roles.clone())
         .with_state(state);
 
     Router::new()
