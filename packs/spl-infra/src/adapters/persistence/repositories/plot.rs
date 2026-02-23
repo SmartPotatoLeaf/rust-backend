@@ -355,6 +355,7 @@ impl PlotRepository for DbPlotRepository {
             .join(JoinType::LeftJoin, prediction::Relation::Label.def());
 
         let first = DbPlotRepository::find_detailed(query, &labels)
+            .group_by(plot::Column::Id)
             .into_model::<DetailedPlotQueryResult>()
             .one(&self.db)
             .await
