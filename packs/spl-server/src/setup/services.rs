@@ -83,6 +83,7 @@ pub fn initialize_services(
         repos.label_repo.clone(),
         repos.prediction_mark_repo.clone(),
         repos.mark_type_repo.clone(),
+        repos.recommendation_repo.clone(),
         storage_client,
         model_client,
         access_control_service.clone(),

@@ -2,7 +2,9 @@ use crate::adapters::web::mappers::diagnostics::prediction::FilterPredictionMapp
 use crate::adapters::web::middleware::auth::AuthUser;
 use crate::adapters::web::models::diagnostics::label::RawLabelResponse;
 use crate::adapters::web::models::diagnostics::prediction_mark::RawPredictionMarkResponse;
-use crate::adapters::web::models::diagnostics::RawPredictionResponse;
+use crate::adapters::web::models::diagnostics::{
+    PredictionDetailedResponse, RawPredictionResponse, SimplifiedPredictionDetailedResponse,
+};
 use crate::adapters::web::models::image::{ImageResponse, RawImageResponse};
 use crate::adapters::web::models::{
     common::SimplifiedQuery,
@@ -45,6 +47,13 @@ enum PredictionOrSimplifiedResponse {
     Simplified(SimplifiedPredictionResponse),
 }
 
+#[derive(Debug, Serialize, ToSchema, Clone, Deserialize)]
+#[serde(untagged)]
+enum PredictionDetailedOrSimplifiedResponse {
+    Prediction(PredictionDetailedResponse),
+    Simplified(SimplifiedPredictionDetailedResponse),
+}
+
 #[derive(OpenApi)]
 #[openapi(
     paths(create_prediction, get_all_by_user_id, filter, get_prediction_by_id, delete_prediction, read_blob, predict),
@@ -63,7 +72,10 @@ enum PredictionOrSimplifiedResponse {
         RawPredictionResponse,
         RawImageResponse,
         RawLabelResponse,
-        RawPredictionMarkResponse
+        RawPredictionMarkResponse,
+        PredictionDetailedOrSimplifiedResponse,
+        PredictionDetailedResponse,
+        SimplifiedPredictionDetailedResponse
     )),
     tags((name = "diagnostics/predictions", description = "Prediction management endpoints"))
 )]
@@ -73,10 +85,8 @@ pub fn router(state: Arc<AppState>, limit_state: Arc<RateLimitState>) -> Router<
     let mut router = Router::new();
 
     if let Some(config) = state.config.rate_limiting.clone() {
-        let rate_limit_layer = middleware::from_fn_with_state(
-            limit_state.clone(),
-            local_rate_limit_middleware,
-        );
+        let rate_limit_layer =
+            middleware::from_fn_with_state(limit_state.clone(), local_rate_limit_middleware);
 
         router = router.route(
             "/public/diagnostics/predict",
@@ -101,6 +111,10 @@ pub fn router(state: Arc<AppState>, limit_state: Arc<RateLimitState>) -> Router<
         .route(
             "/diagnostics/predictions/{id}",
             get(get_prediction_by_id).delete(delete_prediction),
+        )
+        .route(
+            "/diagnostics/predictions/{id}/recommendations",
+            get(get_prediction_with_recommendations),
         )
         .route("/diagnostics/predictions/blobs/{*path}", get(read_blob))
         .with_state(state)
@@ -340,4 +354,40 @@ async fn read_blob(
     headers.insert("Content-Type", "image/jpeg".parse().unwrap());
 
     Ok((StatusCode::OK, headers, bytes).into_response())
+}
+
+#[utoipa::path(
+    get,
+    path = "/diagnostics/predictions/{id}/recommendations",
+    params(
+        ("id" = Uuid, Path, description = "Prediction ID"),
+        SimplifiedQuery
+    ),
+    responses(
+        (status = 200, description = "Prediction with recommendations", body = PredictionDetailedOrSimplifiedResponse),
+        (status = 404, description = "Prediction not found", body = StatusResponse),
+        (status = 401, description = "Unauthorized", body = StatusResponse),
+        (status = 500, description = "Internal Server Error", body = StatusResponse)
+    ),
+    security(("jwt_auth" = [])),
+    tag = "diagnostics/predictions"
+)]
+async fn get_prediction_with_recommendations(
+    State(state): State<Arc<AppState>>,
+    AuthUser(user): AuthUser,
+    Path(id): Path<Uuid>,
+    Query(query): Query<SimplifiedQuery>,
+) -> Result<impl IntoResponse> {
+    let result = state
+        .prediction_service
+        .get_detailed_by_user_id_and_id(user.id, id)
+        .await?;
+
+    ok_if_or_not_found(
+        result,
+        query.simplified,
+        SimplifiedPredictionDetailedResponse::from,
+        PredictionDetailedResponse::from,
+        || "Prediction not found".to_string(),
+    )
 }

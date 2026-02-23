@@ -1,3 +1,4 @@
+use crate::entities::diagnostics::prediction::PredictionDetailed;
 use crate::entities::diagnostics::Prediction;
 use crate::ports::repositories::crud::CrudRepository;
 use async_trait::async_trait;
@@ -33,4 +34,11 @@ pub trait PredictionRepository: CrudRepository<Prediction, Uuid> {
         offset: u64,
         limit: u64,
     ) -> Result<(u64, Vec<Prediction>)>;
+
+    // Get predictions detailed including recomendations
+    async fn get_detailed_by_user_id_and_id(
+        &self,
+        user_id: Uuid,
+        prediction_id: Uuid,
+    ) -> Result<Option<PredictionDetailed>>;
 }

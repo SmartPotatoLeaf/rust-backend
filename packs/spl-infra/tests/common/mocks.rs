@@ -26,6 +26,7 @@ use spl_domain::{
 };
 use spl_shared::error::Result;
 use uuid::Uuid;
+use spl_domain::entities::diagnostics::prediction::PredictionDetailed;
 
 mock! {
     pub UserRepository {}
@@ -108,6 +109,7 @@ mock! {
 }
 
 mock! {
+    #[derive(Clone)]
     pub RecommendationRepository {}
     #[async_trait]
     impl CrudRepository<Recommendation, Uuid> for RecommendationRepository {
@@ -224,6 +226,11 @@ mock! {
             offset: u64,
             limit: u64,
         ) -> Result<(u64, Vec<Prediction>)>;
+        async fn get_detailed_by_user_id_and_id(
+            &self,
+            user_id: Uuid,
+            prediction_id: Uuid,
+        ) -> Result<Option<PredictionDetailed>>;
     }
 }
 

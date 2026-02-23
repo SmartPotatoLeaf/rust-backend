@@ -81,6 +81,12 @@ pub fn initialize_repositories(db: DatabaseConnection) -> Repositories {
         label_repo.clone(),
     ));
 
+    let recommendation_category_repo: Arc<dyn CategoryRepository> =
+        Arc::new(DbCategoryRepository::new(db.clone()));
+    let recommendation_repo: Arc<dyn RecommendationRepository> = Arc::new(
+        DbRecommendationRepository::new(db.clone(), recommendation_category_repo.clone()),
+    );
+
     let prediction_repo: Arc<dyn PredictionRepository> = Arc::new(DbPredictionRepository::new(
         db.clone(),
         user_repo.clone(),
@@ -88,15 +94,10 @@ pub fn initialize_repositories(db: DatabaseConnection) -> Repositories {
         label_repo.clone(),
         prediction_mark_repo.clone(),
         feedback_repo.clone(),
+        recommendation_repo.clone(),
     ));
 
     let plot_repo: Arc<dyn PlotRepository> = Arc::new(DbPlotRepository::new(db.clone()));
-
-    let recommendation_category_repo: Arc<dyn CategoryRepository> =
-        Arc::new(DbCategoryRepository::new(db.clone()));
-    let recommendation_repo: Arc<dyn RecommendationRepository> = Arc::new(
-        DbRecommendationRepository::new(db.clone(), recommendation_category_repo.clone()),
-    );
 
     let dashboard_repo: Arc<dyn DashboardSummaryRepository> = Arc::new(
         DbDashboardSummaryRepository::new(db.clone(), prediction_repo.clone(), plot_repo.clone()),

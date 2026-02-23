@@ -106,7 +106,7 @@ pub fn build_app_full(
 
     let rec_category_service = Arc::new(recommendation::CategoryService::new(rec_category_repo));
     let rec_service = Arc::new(RecommendationService::new(
-        rec_repo,
+        rec_repo.clone(),
         rec_category_service.clone(),
     ));
 
@@ -131,6 +131,7 @@ pub fn build_app_full(
         label_repo.clone(),
         prediction_mark_repo,
         mark_type_repo.clone(),
+        rec_repo.clone(),
         storage_client.clone(),
         model_client.clone(),
         access_control_service.clone(),

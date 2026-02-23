@@ -1,9 +1,9 @@
 use crate::adapters::web::models::diagnostics::{
-    FilterPredictionsRequest, PredictionResponse, RawPredictionResponse,
-    SimplifiedPredictionResponse,
+    FilterPredictionsRequest, PredictionDetailedResponse, PredictionResponse,
+    RawPredictionResponse, SimplifiedPredictionDetailedResponse, SimplifiedPredictionResponse,
 };
 use spl_application::dtos::diagnostics::FilterPredictionDto;
-use spl_domain::entities::diagnostics::prediction::RawPrediction;
+use spl_domain::entities::diagnostics::prediction::{PredictionDetailed, RawPrediction};
 use spl_domain::entities::diagnostics::Prediction;
 use spl_domain::entities::user::User;
 use spl_shared::error::AppError;
@@ -82,6 +82,44 @@ impl From<RawPrediction> for RawPredictionResponse {
             image: value.image.into(),
             label: value.label.into(),
             marks: value.marks.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl From<PredictionDetailed> for PredictionDetailedResponse {
+    fn from(param: PredictionDetailed) -> Self {
+        Self {
+            id: param.id,
+            user: param.user.into(),
+            presence_confidence: param.presence_confidence,
+            absence_confidence: param.absence_confidence,
+            plot_id: param.plot_id,
+            severity: param.severity,
+            label: param.label.into(),
+            image: param.image.into(),
+            marks: param.marks.into_iter().map(Into::into).collect(),
+            created_at: param.created_at,
+            feedback: param.feedback.map(Into::into),
+            recommendations: param.recommendations.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl From<PredictionDetailed> for SimplifiedPredictionDetailedResponse {
+    fn from(param: PredictionDetailed) -> Self {
+        Self {
+            id: param.id,
+            user: param.user.into(),
+            presence_confidence: param.presence_confidence,
+            absence_confidence: param.absence_confidence,
+            plot_id: param.plot_id,
+            severity: param.severity,
+            label: param.label.into(),
+            image: param.image.into(),
+            marks: param.marks.into_iter().map(Into::into).collect(),
+            created_at: param.created_at,
+            feedback: param.feedback.map(Into::into),
+            recommendations: param.recommendations.into_iter().map(Into::into).collect(),
         }
     }
 }

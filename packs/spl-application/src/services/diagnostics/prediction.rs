@@ -3,15 +3,17 @@ use crate::mappers::diagnostics::prediction::CreatePredictionContext;
 use crate::services::access_control::AccessControlService;
 
 use crate::dtos::diagnostics::FilterPredictionDto;
-use spl_domain::entities::diagnostics::prediction::RawPrediction;
+use spl_domain::entities::diagnostics::prediction::{PredictionDetailed, RawPrediction};
 use spl_domain::entities::diagnostics::{Prediction, PredictionMark, RawPredictionMark};
 use spl_domain::entities::image::{Image, RawImage};
+use spl_domain::entities::recommendation::Recommendation;
 use spl_domain::entities::user::User;
 use spl_domain::ports::integrations::{BlobStorageClient, ModelPredictionClient};
 use spl_domain::ports::repositories::diagnostics::{
     LabelRepository, MarkTypeRepository, PredictionMarkRepository, PredictionRepository,
 };
 use spl_domain::ports::repositories::image::ImageRepository;
+use spl_domain::ports::repositories::recommendation::RecommendationRepository;
 use spl_domain::ports::repositories::user::UserRepository;
 use spl_shared::error::{AppError, Result};
 use spl_shared::traits::IntoWithContext;
@@ -29,6 +31,7 @@ pub struct PredictionService {
     storage_client: Arc<dyn BlobStorageClient>,
     model_client: Arc<dyn ModelPredictionClient>,
     access_control: Arc<AccessControlService>,
+    recommendation_repo: Arc<dyn RecommendationRepository>,
 }
 
 impl PredictionService {
@@ -40,6 +43,7 @@ impl PredictionService {
         label_repo: Arc<dyn LabelRepository>,
         mark_repo: Arc<dyn PredictionMarkRepository>,
         mark_type_repo: Arc<dyn MarkTypeRepository>,
+        recommendation_repo: Arc<dyn RecommendationRepository>,
         storage_client: Arc<dyn BlobStorageClient>,
         model_client: Arc<dyn ModelPredictionClient>,
         access_control: Arc<AccessControlService>,
@@ -51,6 +55,7 @@ impl PredictionService {
             label_repo,
             mark_repo,
             mark_type_repo,
+            recommendation_repo,
             storage_client,
             model_client,
             access_control,
@@ -248,6 +253,16 @@ impl PredictionService {
     ) -> Result<Option<Prediction>> {
         self.prediction_repo
             .get_by_user_id_and_id(user_id, id)
+            .await
+    }
+
+    pub async fn get_detailed_by_user_id_and_id(
+        &self,
+        user_id: Uuid,
+        id: Uuid,
+    ) -> Result<Option<PredictionDetailed>> {
+        self.prediction_repo
+            .get_detailed_by_user_id_and_id(user_id, id)
             .await
     }
 

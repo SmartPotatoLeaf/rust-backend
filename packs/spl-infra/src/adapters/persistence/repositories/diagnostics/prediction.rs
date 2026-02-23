@@ -3,6 +3,7 @@ use crate::adapters::persistence::entities::image as image_persistence;
 use crate::adapters::persistence::mappers::diagnostics::prediction::PredictionMapperContext;
 use sea_orm::prelude::Expr;
 use sea_orm::*;
+use spl_domain::entities::diagnostics::prediction::PredictionDetailed;
 use spl_domain::entities::diagnostics::{Label, Prediction, PredictionMark};
 use spl_domain::entities::feedback::Feedback;
 use spl_domain::entities::image::Image;
@@ -13,6 +14,7 @@ use spl_domain::ports::repositories::diagnostics::{
 };
 use spl_domain::ports::repositories::feedback::FeedbackRepository;
 use spl_domain::ports::repositories::image::ImageRepository;
+use spl_domain::ports::repositories::recommendation::RecommendationRepository;
 use spl_domain::ports::repositories::user::UserRepository;
 use spl_shared::adapters::persistence::repository::crud;
 use spl_shared::error::{AppError, Result};
@@ -28,6 +30,7 @@ pub struct DbPredictionRepository {
     label_repository: Arc<dyn LabelRepository>,
     mark_repository: Arc<dyn PredictionMarkRepository>,
     feedback_repository: Arc<dyn FeedbackRepository>,
+    recommendation_repository: Arc<dyn RecommendationRepository>,
 }
 
 impl DbPredictionRepository {
@@ -38,6 +41,7 @@ impl DbPredictionRepository {
         label_repository: Arc<dyn LabelRepository>,
         mark_repository: Arc<dyn PredictionMarkRepository>,
         feedback_repository: Arc<dyn FeedbackRepository>,
+        recommendation_repository: Arc<dyn RecommendationRepository>,
     ) -> Self {
         Self {
             db,
@@ -46,6 +50,7 @@ impl DbPredictionRepository {
             label_repository,
             mark_repository,
             feedback_repository,
+            recommendation_repository,
         }
     }
 
@@ -344,6 +349,26 @@ impl PredictionRepository for DbPredictionRepository {
             .await?;
 
         Ok((total, predictions))
+    }
+
+    async fn get_detailed_by_user_id_and_id(
+        &self,
+        user_id: Uuid,
+        prediction_id: Uuid,
+    ) -> Result<Option<PredictionDetailed>> {
+        let prediction = self
+            .get_by_user_id_and_id(user_id, prediction_id)
+            .await?
+            .ok_or_else(|| {
+                AppError::NotFound(format!("Prediction with id {} not found", prediction_id))
+            })?;
+
+        let recommendations = self
+            .recommendation_repository
+            .get_by_severity(prediction.severity)
+            .await?;
+
+        prediction.into_with_context(recommendations).map(Some)
     }
 }
 
