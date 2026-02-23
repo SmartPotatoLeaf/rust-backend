@@ -1,5 +1,9 @@
-use crate::dtos::dashboard::{DashboardCountsDto, DashboardFiltersDto, DashboardSummaryDto};
-use spl_domain::entities::dashboard::{DashboardCounts, DashboardSummary, DashboardSummaryFilters};
+use crate::dtos::dashboard::{
+    DashboardCountsDto, DashboardFiltersDto, DashboardSummaryDto, DashboardSummaryPlotDto,
+};
+use spl_domain::entities::dashboard::{
+    DashboardCounts, DashboardDetailedPlot, DashboardSummary, DashboardSummaryFilters,
+};
 use spl_domain::entities::user::User;
 use spl_domain::ports::repositories::dashboard::DashboardSummaryRepository;
 use spl_domain::ports::repositories::diagnostics::LabelRepository;
@@ -168,6 +172,25 @@ impl DashboardService {
         Ok((users_ids, plots_ids))
     }
 
+    /// Resolve company_id from requester and optional dto company_id (admin only)
+    async fn resolve_company_id(
+        &self,
+        requester: &User,
+        dto: &DashboardSummaryPlotDto,
+    ) -> Result<Uuid> {
+        if requester.role.level >= 100 {
+            dto.company_id.ok_or_else(|| {
+                AppError::ValidationError("Company ID is required for admin users".into())
+            })
+        } else {
+            requester
+                .company
+                .clone()
+                .ok_or_else(|| AppError::Forbidden)
+                .map(|c| c.id)
+        }
+    }
+
     /// Get dashboard summary with statistics using existing filter method
     pub async fn get_summary(
         &self,
@@ -200,6 +223,54 @@ impl DashboardService {
                 plots_ids,
                 dto.labels,
                 dto.last_n,
+            )
+            .await
+    }
+
+    /// Get dashboard summary with detailed plot by specific plot ID (plot_id comes from path)
+    pub async fn get_summary_detailed_plot_by_id(
+        &self,
+        requester: User,
+        plot_id: Uuid,
+        dto: DashboardSummaryPlotDto,
+    ) -> Result<Option<DashboardDetailedPlot>> {
+        let company_id = self.resolve_company_id(&requester, &dto).await?;
+        let (users_ids, plots_ids) = self
+            .validate_ids(&requester, &dto.users_ids, &Some(vec![Some(plot_id)]))
+            .await?;
+
+        self.dashboard_repository
+            .get_summary_detailed_plot_by_id(
+                company_id,
+                plot_id,
+                users_ids,
+                dto.min_date,
+                dto.max_date,
+                plots_ids,
+                dto.labels,
+            )
+            .await
+    }
+
+    /// Get dashboard summary with default plot for the company
+    pub async fn get_summary_detailed_plot_default(
+        &self,
+        requester: User,
+        dto: DashboardSummaryPlotDto,
+    ) -> Result<Option<DashboardDetailedPlot>> {
+        let company_id = self.resolve_company_id(&requester, &dto).await?;
+        let (users_ids, plots_ids) = self
+            .validate_ids(&requester, &dto.users_ids, &None)
+            .await?;
+
+        self.dashboard_repository
+            .get_default_summary_detailed_plot(
+                company_id,
+                users_ids,
+                dto.min_date,
+                dto.max_date,
+                plots_ids,
+                dto.labels,
             )
             .await
     }

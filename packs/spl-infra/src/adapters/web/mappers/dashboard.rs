@@ -1,15 +1,16 @@
 use crate::adapters::web::models::dashboard::{
-    DashboardCountsRequest, DashboardCountsResponse, DashboardDistributionResponse,
-    DashboardFiltersRequest, DashboardFiltersResponse, DashboardLabelCountResponse,
+    DashboardCountsRequest, DashboardCountsResponse, DashboardDetailedPlotResponse,
+    DashboardDistributionResponse, DashboardFiltersRequest, DashboardFiltersResponse,
+    DashboardLabelCountResponse, DashboardSummaryPlotRequest,
     DashboardSummaryRequest, DashboardSummaryResponse, SimplifiedDashboardCountsResponse,
     SimplifiedDashboardFiltersResponse,
 };
 use spl_application::dtos::dashboard::{
-    DashboardCountsDto, DashboardFiltersDto, DashboardSummaryDto,
+    DashboardCountsDto, DashboardFiltersDto, DashboardSummaryDto, DashboardSummaryPlotDto,
 };
 use spl_domain::entities::dashboard::{
-    DashboardCounts, DashboardDistribution, DashboardLabelCount, DashboardSummary,
-    DashboardSummaryFilters,
+    DashboardCounts, DashboardDetailedPlot, DashboardDistribution, DashboardLabelCount,
+    DashboardSummary, DashboardSummaryFilters,
 };
 use spl_shared::{map_mirror, maps_to};
 
@@ -35,6 +36,17 @@ map_mirror!(
         plot_ids,
         labels,
         last_n,
+    }
+);
+
+map_mirror!(
+    DashboardSummaryPlotDto,
+    DashboardSummaryPlotRequest {
+        company_id,
+        users_ids,
+        min_date,
+        max_date,
+        labels,
     }
 );
 
@@ -109,6 +121,21 @@ impl From<DashboardCounts> for SimplifiedDashboardCountsResponse {
                 .distribution
                 .map(|c| c.into_iter().map(Into::into).collect()),
             last_predictions: value.last_predictions.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl From<DashboardDetailedPlot> for DashboardDetailedPlotResponse {
+    fn from(value: DashboardDetailedPlot) -> Self {
+        Self {
+            id: value.id,
+            name: value.name,
+            description: value.description,
+            created_at: value.created_at,
+            total_diagnosis: value.total_diagnosis,
+            last_diagnosis: value.last_diagnosis,
+            matching_diagnosis: value.matching_diagnosis,
+            summary: value.summary.into(),
         }
     }
 }

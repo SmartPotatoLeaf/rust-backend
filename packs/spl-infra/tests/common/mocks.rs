@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use chrono::DateTime;
 use chrono::Utc;
 use mockall::mock;
-use spl_domain::entities::dashboard::{DashboardCounts, DashboardSummary};
+use spl_domain::entities::dashboard::{DashboardCounts, DashboardDetailedPlot, DashboardSummary};
 use spl_domain::entities::diagnostics::{MarkType, Prediction, PredictionMark};
 use spl_domain::entities::feedback::Feedback;
 use spl_domain::entities::plot::Plot;
@@ -279,6 +279,27 @@ mock! {
         labels: Option<Vec<String>>,
         last_n: u64,
     ) -> Result<DashboardCounts>;
+        
+    async fn get_summary_detailed_plot_by_id(
+        &self,
+        company_id: Uuid,
+        plot_id: Uuid,
+        users_ids: Vec<Uuid>,
+        min_date: Option<DateTime<Utc>>,
+        max_date: Option<DateTime<Utc>>,
+        plot_ids: Vec<Option<Uuid>>,
+        labels: Option<Vec<String>>,
+    ) -> Result<Option<DashboardDetailedPlot>>;
+
+    async fn get_default_summary_detailed_plot(
+        &self,
+        company_id: Uuid,
+        users_ids: Vec<Uuid>,
+        min_date: Option<DateTime<Utc>>,
+        max_date: Option<DateTime<Utc>>,
+        plot_ids: Vec<Option<Uuid>>,
+        labels: Option<Vec<String>>,
+    ) -> Result<Option<DashboardDetailedPlot>>;
     }
 }
 

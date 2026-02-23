@@ -1,20 +1,21 @@
 use sea_orm::DatabaseConnection;
+use spl_domain::ports::auth::{PasswordEncoder, TokenGenerator};
 use spl_domain::ports::repositories::{
-    user::{RoleRepository, UserRepository},
     company::CompanyRepository,
+    dashboard::DashboardSummaryRepository,
+    diagnostics::{
+        LabelRepository, MarkTypeRepository, PredictionMarkRepository, PredictionRepository,
+    },
+    feedback::{FeedbackRepository, FeedbackStatusRepository},
     image::ImageRepository,
     plot::PlotRepository,
     recommendation::{CategoryRepository, RecommendationRepository},
-    feedback::{FeedbackRepository, FeedbackStatusRepository},
-    dashboard::DashboardSummaryRepository,
-    diagnostics::{
-        LabelRepository,
-        MarkTypeRepository,
-        PredictionRepository,
-        PredictionMarkRepository,
-    },
+    user::{RoleRepository, UserRepository},
 };
-use spl_domain::ports::auth::{PasswordEncoder, TokenGenerator};
+use spl_infra::adapters::persistence::repositories::{
+    dashboard::DbDashboardSummaryRepository, recommendation::DbCategoryRepository,
+    DbFeedbackStatusRepository,
+};
 use spl_infra::adapters::{
     auth::{jwt::JwtTokenGenerator, password::Argon2PasswordEncoder},
     persistence::repositories::{
@@ -29,11 +30,6 @@ use spl_infra::adapters::{
         recommendation::DbRecommendationRepository,
         user::{role::DbRoleRepository, DbUserRepository},
     },
-};
-use spl_infra::adapters::persistence::repositories::{
-    dashboard::DbDashboardSummaryRepository,
-    DbFeedbackStatusRepository,
-    recommendation::DbCategoryRepository,
 };
 use spl_shared::config::AppConfig;
 use std::sync::Arc;
@@ -71,13 +67,14 @@ pub fn initialize_repositories(db: DatabaseConnection) -> Repositories {
 
     let image_repo: Arc<dyn ImageRepository> = Arc::new(DbImageRepository::new(db.clone()));
     let label_repo: Arc<dyn LabelRepository> = Arc::new(DbLabelRepository::new(db.clone()));
-    let mark_type_repo: Arc<dyn MarkTypeRepository> = Arc::new(DbMarkTypeRepository::new(db.clone()));
-    let prediction_mark_repo: Arc<dyn PredictionMarkRepository> = Arc::new(DbPredictionMarkRepository::new(
-        db.clone(),
-        mark_type_repo.clone(),
-    ));
+    let mark_type_repo: Arc<dyn MarkTypeRepository> =
+        Arc::new(DbMarkTypeRepository::new(db.clone()));
+    let prediction_mark_repo: Arc<dyn PredictionMarkRepository> = Arc::new(
+        DbPredictionMarkRepository::new(db.clone(), mark_type_repo.clone()),
+    );
 
-    let feedback_status_repo: Arc<dyn FeedbackStatusRepository> = Arc::new(DbFeedbackStatusRepository::new(db.clone()));
+    let feedback_status_repo: Arc<dyn FeedbackStatusRepository> =
+        Arc::new(DbFeedbackStatusRepository::new(db.clone()));
     let feedback_repo: Arc<dyn FeedbackRepository> = Arc::new(DbFeedbackRepository::new(
         db.clone(),
         feedback_status_repo.clone(),
@@ -95,16 +92,15 @@ pub fn initialize_repositories(db: DatabaseConnection) -> Repositories {
 
     let plot_repo: Arc<dyn PlotRepository> = Arc::new(DbPlotRepository::new(db.clone()));
 
-    let recommendation_category_repo: Arc<dyn CategoryRepository> = Arc::new(DbCategoryRepository::new(db.clone()));
-    let recommendation_repo: Arc<dyn RecommendationRepository> = Arc::new(DbRecommendationRepository::new(
-        db.clone(),
-        recommendation_category_repo.clone(),
-    ));
+    let recommendation_category_repo: Arc<dyn CategoryRepository> =
+        Arc::new(DbCategoryRepository::new(db.clone()));
+    let recommendation_repo: Arc<dyn RecommendationRepository> = Arc::new(
+        DbRecommendationRepository::new(db.clone(), recommendation_category_repo.clone()),
+    );
 
-    let dashboard_repo: Arc<dyn DashboardSummaryRepository> = Arc::new(DbDashboardSummaryRepository::new(
-        db.clone(),
-        prediction_repo.clone(),
-    ));
+    let dashboard_repo: Arc<dyn DashboardSummaryRepository> = Arc::new(
+        DbDashboardSummaryRepository::new(db.clone(), prediction_repo.clone(), plot_repo.clone()),
+    );
 
     Repositories {
         role_repo,

@@ -1,15 +1,16 @@
 use spl_shared::error::Result;
 use spl_shared::http::extractor::ValidatedJson;
-use spl_shared::http::responses::{json_if, StatusResponse};
+use spl_shared::http::responses::{json_if, ok_if_or_not_found, StatusResponse};
 
 use crate::adapters::web::{
     middleware::auth::AuthUser,
     models::{
         common::SimplifiedQuery,
         dashboard::{
-            DashboardCountsRequest, DashboardCountsResponse, DashboardDistributionResponse,
-            DashboardFiltersRequest, DashboardFiltersResponse, DashboardLabelCountResponse,
-            DashboardSummaryRequest, DashboardSummaryResponse, SimplifiedDashboardFiltersResponse,
+            DashboardCountsRequest, DashboardCountsResponse, DashboardDetailedPlotResponse,
+            DashboardDistributionResponse, DashboardFiltersRequest, DashboardFiltersResponse,
+            DashboardLabelCountResponse, DashboardSummaryPlotRequest, DashboardSummaryRequest,
+            DashboardSummaryResponse, SimplifiedDashboardFiltersResponse,
         },
         user::SimplifiedUserResponse,
     },
@@ -17,7 +18,7 @@ use crate::adapters::web::{
 };
 
 use axum::{
-    extract::{Query, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     middleware,
     response::IntoResponse,
@@ -32,6 +33,7 @@ use crate::adapters::web::models::dashboard::SimplifiedDashboardCountsResponse;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use utoipa::{OpenApi, ToSchema};
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, ToSchema, Clone, Deserialize)]
 #[serde(untagged)]
@@ -49,7 +51,7 @@ enum DashboardCountsOrSimplifiedResponse {
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(get_filters, get_summary, get_filters_admin, get_summary_counts),
+    paths(get_filters, get_summary, get_filters_admin, get_summary_counts, get_summary_detailed_plot_by_id, get_summary_detailed_plot_default),
     components(schemas(
         DashboardFiltersRequest,
         DashboardFiltersResponse,
@@ -64,7 +66,9 @@ enum DashboardCountsOrSimplifiedResponse {
         DashboardCountsRequest,
         DashboardCountsResponse,
         SimplifiedDashboardCountsResponse,
-        DashboardCountsOrSimplifiedResponse
+        DashboardCountsOrSimplifiedResponse,
+        DashboardSummaryPlotRequest,
+        DashboardDetailedPlotResponse
     )),
     tags((name = "dashboard", description = "Dashboard analytics endpoints"))
 )]
@@ -82,11 +86,19 @@ pub fn router(state: Arc<AppState>) -> Router<Arc<AppState>> {
         .route(
             "/dashboard/filters",
             post(get_filters_admin)
-                .route_layer(admin_only_layer)
-                .route_layer(admin_extension_roles),
+                .route_layer(admin_only_layer.clone())
+                .route_layer(admin_extension_roles.clone()),
         )
         .route("/dashboard/summary", post(get_summary))
         .route("/dashboard/counts", post(get_summary_counts))
+        .route(
+            "/dashboard/plots/default/summary",
+            post(get_summary_detailed_plot_default),
+        )
+        .route(
+            "/dashboard/plots/{id}/summary",
+            post(get_summary_detailed_plot_by_id),
+        )
         .with_state(state)
 }
 
@@ -241,4 +253,80 @@ async fn get_summary_counts(
     );
 
     Ok((StatusCode::OK, results))
+}
+
+#[utoipa::path(
+    post,
+    path = "/dashboard/plots/default/summary",
+    request_body = DashboardSummaryPlotRequest,
+    responses(
+        (status = 200, description = "Dashboard summary with default plot", body = DashboardDetailedPlotResponse),
+        (status = 400, description = "Invalid input", body = StatusResponse),
+        (status = 401, description = "Unauthorized", body = StatusResponse),
+        (status = 403, description = "Forbidden", body = StatusResponse),
+        (status = 404, description = "No default plot found", body = StatusResponse),
+        (status = 500, description = "Internal Server Error", body = StatusResponse)
+    ),
+    security(
+        ("jwt_auth" = [])
+    ),
+    tag = "dashboard"
+)]
+async fn get_summary_detailed_plot_default(
+    State(state): State<Arc<AppState>>,
+    AuthUser(user): AuthUser,
+    ValidatedJson(payload): ValidatedJson<DashboardSummaryPlotRequest>,
+) -> Result<impl IntoResponse> {
+    let detailed_plot = state
+        .dashboard_service
+        .get_summary_detailed_plot_default(user, payload.into())
+        .await?;
+
+    ok_if_or_not_found(
+        detailed_plot,
+        true,
+        DashboardDetailedPlotResponse::from,
+        DashboardDetailedPlotResponse::from,
+        || "No default plot found for company".to_string(),
+    )
+}
+
+#[utoipa::path(
+    post,
+    path = "/dashboard/plots/{plot_id}/summary",
+    request_body = DashboardSummaryPlotRequest,
+    params(
+        ("plot_id" = Uuid, Path, description = "Plot UUID")
+    ),
+    responses(
+        (status = 200, description = "Dashboard summary with detailed plot", body = DashboardDetailedPlotResponse),
+        (status = 400, description = "Invalid input", body = StatusResponse),
+        (status = 401, description = "Unauthorized", body = StatusResponse),
+        (status = 403, description = "Forbidden", body = StatusResponse),
+        (status = 404, description = "Plot not found", body = StatusResponse),
+        (status = 500, description = "Internal Server Error", body = StatusResponse)
+    ),
+    security(
+        ("jwt_auth" = [])
+    ),
+    tag = "dashboard"
+)]
+async fn get_summary_detailed_plot_by_id(
+    State(state): State<Arc<AppState>>,
+    AuthUser(user): AuthUser,
+    Path(plot_id): Path<Uuid>,
+    ValidatedJson(payload): ValidatedJson<DashboardSummaryPlotRequest>,
+) -> Result<impl IntoResponse> {
+    let detailed_plot = state
+        .dashboard_service
+        .get_summary_detailed_plot_by_id(user, plot_id, payload.into())
+        .await?;
+
+    ok_if_or_not_found(
+        detailed_plot,
+        true,
+        DashboardDetailedPlotResponse::from,
+        DashboardDetailedPlotResponse::from,
+        || "Plot not found".to_string(),
+    )
 }

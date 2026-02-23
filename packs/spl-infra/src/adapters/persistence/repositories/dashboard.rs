@@ -6,11 +6,14 @@ use sea_orm::prelude::DateTimeWithTimeZone;
 use sea_orm::sea_query::{Expr, ExprTrait, Func};
 use sea_orm::*;
 use spl_domain::entities::dashboard::{
-    DashboardCounts, DashboardDistribution, DashboardLabelCount, DashboardSummary,
+    DashboardCounts, DashboardDetailedPlot, DashboardDistribution, DashboardLabelCount,
+    DashboardSummary,
 };
 use spl_domain::ports::repositories::dashboard::DashboardSummaryRepository;
 use spl_domain::ports::repositories::diagnostics::PredictionRepository;
+use spl_domain::ports::repositories::plot::PlotRepository;
 use spl_shared::error::{AppError, Result};
+use spl_shared::traits::IntoWithContext;
 use std::collections::HashMap;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -18,16 +21,19 @@ use uuid::Uuid;
 pub struct DbDashboardSummaryRepository {
     db: DatabaseConnection,
     prediction_repository: Arc<dyn PredictionRepository>,
+    plot_repository: Arc<dyn PlotRepository>,
 }
 
 impl DbDashboardSummaryRepository {
     pub fn new(
         db: DatabaseConnection,
         prediction_repository: Arc<dyn PredictionRepository>,
+        plot_repository: Arc<dyn PlotRepository>,
     ) -> Self {
         Self {
             db,
             prediction_repository,
+            plot_repository,
         }
     }
 }
@@ -206,5 +212,51 @@ impl DashboardSummaryRepository for DbDashboardSummaryRepository {
             distribution: summary.distribution,
             last_predictions: predictions.1,
         })
+    }
+
+    async fn get_summary_detailed_plot_by_id(
+        &self,
+        company_id: Uuid,
+        plot_id: Uuid,
+        users_ids: Vec<Uuid>,
+        min_date: Option<DateTime<Utc>>,
+        max_date: Option<DateTime<Utc>>,
+        plot_ids: Vec<Option<Uuid>>,
+        labels: Option<Vec<String>>,
+    ) -> Result<Option<DashboardDetailedPlot>> {
+        let (detailed, summary) = tokio::try_join!(
+            self.plot_repository.get_detailed_by_id(
+                company_id,
+                plot_id,
+                labels.clone().unwrap_or(vec![])
+            ),
+            self.get_summary(users_ids, min_date, max_date, plot_ids, labels)
+        )?;
+
+        let detailed = detailed
+            .ok_or_else(|| AppError::NotFound(format!("Plot with id {} not found", plot_id)))?;
+
+        Ok(Some(detailed.into_with_context(summary)?))
+    }
+
+    async fn get_default_summary_detailed_plot(
+        &self,
+        company_id: Uuid,
+        users_ids: Vec<Uuid>,
+        min_date: Option<DateTime<Utc>>,
+        max_date: Option<DateTime<Utc>>,
+        plot_ids: Vec<Option<Uuid>>,
+        labels: Option<Vec<String>>,
+    ) -> Result<Option<DashboardDetailedPlot>> {
+        let (detailed, summary) = tokio::try_join!(
+            self.plot_repository
+                .get_default_detailed(company_id, labels.clone().unwrap_or(vec![])),
+            self.get_summary(users_ids, min_date, max_date, plot_ids, labels)
+        )?;
+
+        let detailed = detailed
+            .ok_or_else(|| AppError::NotFound("Company has no default plot".to_string()))?;
+
+        Ok(Some(detailed.into_with_context(summary)?))
     }
 }

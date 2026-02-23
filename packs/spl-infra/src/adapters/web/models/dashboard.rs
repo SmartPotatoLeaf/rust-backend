@@ -124,3 +124,39 @@ pub struct SimplifiedDashboardCountsResponse {
     /// Last predictions matching the filters
     pub last_predictions: Vec<SimplifiedPredictionResponse>,
 }
+
+/// Request for dashboard summary with plot
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Validate)]
+pub struct DashboardSummaryPlotRequest {
+    /// Filter by company ID (required for admin users)
+    pub company_id: Option<Uuid>,
+    /// Filter by specific user IDs
+    pub users_ids: Option<Vec<Uuid>>,
+    /// Filter data from this date onwards
+    pub min_date: Option<DateTime<Utc>>,
+    /// Filter data up to this date
+    pub max_date: Option<DateTime<Utc>>,
+    /// Filter by disease label names
+    pub labels: Option<Vec<String>>,
+}
+
+/// Response for dashboard detailed plot
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct DashboardDetailedPlotResponse {
+    /// Plot ID
+    pub id: Option<Uuid>,
+    /// Plot name
+    pub name: String,
+    /// Plot description
+    pub description: Option<String>,
+    /// Plot creation date
+    pub created_at: DateTime<Utc>,
+    /// Total diagnoses for this plot
+    pub total_diagnosis: i64,
+    /// Last diagnosis date
+    pub last_diagnosis: Option<DateTime<Utc>>,
+    /// Number of matching diagnoses
+    pub matching_diagnosis: i64,
+    /// Dashboard summary (simplified)
+    pub summary: DashboardSummaryResponse,
+}
