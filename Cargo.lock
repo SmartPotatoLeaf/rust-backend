@@ -4481,6 +4481,7 @@ dependencies = [
  "futures",
  "http 1.4.0",
  "image",
+ "itertools 0.14.0",
  "jsonwebtoken",
  "mockall",
  "prost",
